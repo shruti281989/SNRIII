@@ -6,7 +6,7 @@ decoy=$(realpath ../reference/fasta/Potra02_genome.fasta)
 
 [[ ! -d $out ]] && mkdir -p $out
 
-sbatch -A u2022003 -o $out/index.out -e $out/index.err \
+sbatch -A u2022027 -o $out/index.out -e $out/index.err \
 --mail-user huge_ashes@yahoo.com $(realpath ../UPSCb-common/pipeline/runSalmonIndex.sh) \
 -d $decoy $in $out
 

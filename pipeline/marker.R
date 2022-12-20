@@ -1,14 +1,14 @@
 #' How to plot by different methods
-DotPlot(seurat_integrated, features = c(), 
+DotPlot(seurat_integrated, features = "Potra2n8c18092", 
         cols = c("blue", "red"), dot.scale = 8, split.by = "sample") + 
-  RotatedAxis() + ylab("Cluster Identity") +xlab("Genes")
+  RotatedAxis() + ylab("Cluster Identity") +xlab("Genes")+coord_flip()
 
 DotPlot(seurat_integrated, features=Shi3) +RotatedAxis()
 
 VlnPlot(seurat_integrated, features = ngo2)
 
 # Split Violin
-plots <- VlnPlot(seurat_integrated, features = ngo2, cols = c("blue", "red"),
+plots <- VlnPlot(seurat_integrated, features = "Potra2n3c7270", cols = c("blue", "red"),
                  split.by = "sample", pt.size = 0, combine = FALSE, split.plot = TRUE)
 wrap_plots(plots = plots, ncol = 1)                                                                                                                                                                    
 # 

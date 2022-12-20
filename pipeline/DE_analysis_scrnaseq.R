@@ -37,15 +37,15 @@ suppressPackageStartupMessages({
   library(limma)
 })
 
-seurat <- readRDS("~/shruti/single_cell_analysis_poplar/data/nitrate_resp/integerated_seurat/seurat_integrated.rds")
-setwd("~/shruti/single_cell_analysis_poplar/data/nitrate_resp/salmonQuant_out/DE_analysis_scrnaseq")
+load("~/shruti/SNRIII/data/SeuratOut/integ.RData")
+setwd("~/shruti/SNRIII/data/SeuratOut/pseudoBulkDEclusterwise/")
 
 # Extract raw counts and metadata to create SingleCellExperiment object
 counts <- GetAssayData(object = seurat_integrated, slot = "counts", assay="RNA")
 metadata <- seurat_integrated@meta.data
 
 # Set up metadata as desired for aggregation and DE analysis
-Idents(object = seurat_integrated) <- "integrated_snn_res.0.8"
+Idents(object = seurat_integrated) <- "integrated_snn_res.0.6"
 metadata$cluster_id <- factor(seurat_integrated@active.ident)
 
 # Create single cell experiment object
@@ -107,7 +107,7 @@ pb <- split.data.frame(pb,factor(splitf)) %>%
 options(width = 100)
 kable(table(sce$cluster_id, sce$sample))
 
-keepClusters <-as.character(c(0:11, 0:11))
+keepClusters <-as.character(c(0:21, 0:21))
 (interestingClusters <- SingleCellExperiment(assays = pb[keepClusters]))
 
 (design <- model.matrix(~ 0 + ei$sample) %>% 
@@ -131,10 +131,10 @@ res <- lapply(keepClusters, function(k) {
     dplyr::rename(p_val = PValue, p_adj = FDR)
 })
 
-# filter FDR < 0.05, |logFC| > 1 & sort by FDR
+# filter FDR < 0.01, |logFC| > 0.1 & sort by FDR
 res_fil <- lapply(res, 
                   function(u)  u %>% 
-                    dplyr::filter(p_adj < 0.05, abs(logFC) > 1) %>% 
+                    dplyr::filter(p_adj < 0.01, abs(logFC) > 0.1) %>% 
                     dplyr::arrange(p_adj))
 
 ## Count the number of differential gene findings by cluster.
@@ -145,18 +145,18 @@ cbind(cluster=keepClusters, numDE_genes=n_de,
 
 for(cluster in 1:length(keepClusters)){
   # Full results
-  filePath <- paste0("./all_genes/Cluster", keepClusters[cluster])
+  filePath <- paste0("clustWiseAllDE/Cluster", keepClusters[cluster])
   out <- res[[cluster]][,c("gene", "logFC", "logCPM", "p_adj")]
   write.csv(out, file = paste0(filePath, "_ctrlkno.csv"), quote=F, row.names = F)
   
   # Sig genes
-  filePath <- paste0("./sig0.05/Cluster", keepClusters[cluster])
+  filePath <- paste0("clustWiseSigDE/Cluster", keepClusters[cluster])
   out <- res_fil[[cluster]][,c("gene", "logFC", "logCPM", "p_adj")]
   write.csv(out, file = paste0(filePath, "_", "ctrlkno.csv"), quote=F, row.names = F)
   
 }
 # Clear workspace and restart R
-rm(ls())
+
 # Part 2: bulk DE analysis
 suppressPackageStartupMessages({
   library(tximport)
@@ -180,9 +180,12 @@ suppressPackageStartupMessages({
   library(VennDiagram)
 })
 
-tx2gene <- suppressMessages(read_delim(here("~/shruti/single_cell_analysis_poplar/reference/annotation/tx2gene.tsv.gz"),delim="\t", col_names=c("TXID","GENE")))
-setwd("~/shruti/single_cell_analysis_poplar/data/nitrate_resp/salmon/edger/")
-files <- dir("~/shruti/single_cell_analysis_poplar/data/nitrate_resp/salmon/", recursive=TRUE, pattern="quant.sf", full.names =TRUE)
+tx2gene <- suppressMessages(read_delim
+                            (here("~/shruti/single_cell_analysis_poplar/reference/annotation/tx2gene.tsv.gz"),
+                              delim="\t", col_names=c("TXID","GENE")))
+setwd("~/shruti/SNRIII/data/SeuratOut/pseudobulkDE/")
+files <- dir("~/shruti/SNRIII/data/salmon_cat/", recursive=TRUE, 
+             pattern="quant.sf", full.names =TRUE)
 txi <- tximport(files, type = "salmon", tx2gene = tx2gene)
 head(txi$counts)
 
