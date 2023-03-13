@@ -37,8 +37,8 @@ suppressPackageStartupMessages({
   library(limma)
 })
 
-load("~/shruti/SNRIII/data/SeuratOut/integ.RData")
-setwd("~/shruti/SNRIII/data/SeuratOut/pseudoBulkDEclusterwise/")
+load("~/shruti/SNRIII/data/SeuratOut/integafterdbltremoval.RData")
+setwd("~/shruti/SNRIII/data/SeuratOut/output/afterDbltRemoval/pseudobulkDEClustWiseAftrDblt/")
 
 # Extract raw counts and metadata to create SingleCellExperiment object
 counts <- GetAssayData(object = seurat_integrated, slot = "counts", assay="RNA")
@@ -107,7 +107,7 @@ pb <- split.data.frame(pb,factor(splitf)) %>%
 options(width = 100)
 kable(table(sce$cluster_id, sce$sample))
 
-keepClusters <-as.character(c(0:21, 0:21))
+keepClusters <-as.character(c(0:20, 0:20))
 (interestingClusters <- SingleCellExperiment(assays = pb[keepClusters]))
 
 (design <- model.matrix(~ 0 + ei$sample) %>% 
@@ -143,14 +143,15 @@ n_de <- vapply(res_fil, nrow, numeric(1))
 cbind(cluster=keepClusters, numDE_genes=n_de, 
       percentage = round(n_de / nrow(interestingClusters) * 100, digits =2)) %>%  kable()
 
+# mkdir clustWiseAllDE
 for(cluster in 1:length(keepClusters)){
   # Full results
-  filePath <- paste0("clustWiseAllDE/Cluster", keepClusters[cluster])
+  filePath <- paste0("output/afterDbltRemoval/clustWiseAllDE/Cluster", keepClusters[cluster])
   out <- res[[cluster]][,c("gene", "logFC", "logCPM", "p_adj")]
   write.csv(out, file = paste0(filePath, "_ctrlkno.csv"), quote=F, row.names = F)
   
   # Sig genes
-  filePath <- paste0("clustWiseSigDE/Cluster", keepClusters[cluster])
+  filePath <- paste0("output/afterDbltRemoval/clustWiseSigDE/Cluster", keepClusters[cluster])
   out <- res_fil[[cluster]][,c("gene", "logFC", "logCPM", "p_adj")]
   write.csv(out, file = paste0(filePath, "_", "ctrlkno.csv"), quote=F, row.names = F)
   
@@ -183,14 +184,18 @@ suppressPackageStartupMessages({
 tx2gene <- suppressMessages(read_delim
                             (here("~/shruti/single_cell_analysis_poplar/reference/annotation/tx2gene.tsv.gz"),
                               delim="\t", col_names=c("TXID","GENE")))
-setwd("~/shruti/SNRIII/data/SeuratOut/pseudobulkDE/")
-files <- dir("~/shruti/SNRIII/data/salmon_cat/", recursive=TRUE, 
+setwd("~/shruti/SNRIII/data/edgeRscBulkDE/")
+files <- dir(".", recursive=TRUE, 
              pattern="quant.sf", full.names =TRUE)
 txi <- tximport(files, type = "salmon", tx2gene = tx2gene)
-head(txi$counts)
+head(txi$countsFromAbundance)
+txi
 
 cts <- txi$counts
+saveRDS(cts, file="cts_SNRIII.rds")
 colnames(cts) <- c("KCl","KNO")
+write.table(x, file, append = FALSE, sep = " ", dec = ".",
+            row.names = TRUE, col.names = TRUE)
 
 #1. create a DGElist object:
 y <- DGEList(counts=cts, group=1:2, genes = rownames(cts), remove.zeros = TRUE)
