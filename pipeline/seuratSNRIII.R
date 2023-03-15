@@ -411,7 +411,7 @@ mean_counts_per_cell <- Matrix::colMeans(filtered_seurat, slot = 'counts')
 #' Genes for cell cycle are picked from two arabidospis papers Yadav et al., 2009
 #' and Gutierrez, 2009 as describe din Chen et al., 2021, Genome Biology
 #' 
-#' Find cell cycle genes (sphase and g2m pahse) list for poplar from marker.R
+#' Find cell cycle genes (sphase and g2m pahse) list for poplar from CellTypeMarker.R
 #' 
 seurat_phase <- CellCycleScoring(seurat_phase, s.features = sphase, 
                                  g2m.features = c(g2phase,mphase), 
@@ -481,7 +481,7 @@ for (i in 1:length(split_seurat)) {
 # (ii). can use seurat_phase object here instead of pop-singlets data
 
 # (iii). can also use regress out protoplasting genes from the dataset 
-# using Yadav_pp gene sets in marker.R file but I have not done this
+# using Yadav_pp gene sets in CellTypeMarker.R file but I have not done this
 
 #' 4. Integrate samples using shared highly variable genes
 

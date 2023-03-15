@@ -185,7 +185,7 @@ seurat_phase <- NormalizeData(pop.singlets,
                               normalization.method = "LogNormalize", 
                               scale.factor = 10000)
 #' 
-#' go to nitrate.R and continue from step 2.5
+#' go to seuratSNRIII.R and continue from step 2.5
 #'  
 #' PART 2: If you want to run on individual sample (not merged)
 pop.sample <- NormalizeData(filt0.9_500_200_cdata)

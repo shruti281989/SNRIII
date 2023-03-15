@@ -13,7 +13,7 @@
 #' https://github.com/hbc/knowledgebase/blob/master/scrnaseq/pseudobulkDE_edgeR.md
 #' https://bioconductor.org/packages/release/bioc/vignettes/edgeR/inst/doc/edgeRUsersGuide.pdf
 #' https://bioconductor.riken.jp/packages/3.14/bioc/vignettes/Glimma/inst/doc/single_cell_edger.html
-#' Seurat has been run per nitrate.R script
+#' Seurat has been run per seuratSNRIII.R script
 #'
 # PART1: Single Cell pseudobulk DE analysis
 suppressPackageStartupMessages({
