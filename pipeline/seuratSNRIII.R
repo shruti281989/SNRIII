@@ -628,12 +628,11 @@ write.table(conserved_markers, file = "output/afterDbltRemoval/cons_marker.txt",
             row.names = T, col.names = T)
 #'
 #' Rename clusters 
-seurat_labelled <- RenameIdents(object = seurat_integrated,
-                                "0" = "LateFib", 
-                                "4" = "RayPrec", "5" = "Fib", "6" = "LateFib", 
-                                "10" = "Fib", 
-                                "12" = "Fib", "13" = "LateFib", "14" = "EarlyFib",
-                                "15" = "FibOrgan", "16" = "EarlyFib")
+seurat_labelled <- RenameIdents(object = split_seurat$ctrl,
+                                "4" = "Fibers1", "5" = "Rays1", 
+                                "7" = "Rays2", "12" = "Fibers2", 
+                                "15" = "Fibers3", "17" = "Vessels",
+                                "19" = "Phloem", "20" = "Cambium")
 # 
 # seurat_labelled$celltype.sample <- paste(Idents(seurat_labelled), seurat_labelled$sample,
 #                                       sep = "_")
