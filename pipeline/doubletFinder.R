@@ -42,6 +42,7 @@ load("/mnt/picea/home/schoudhary/shruti/SNRIII/data/SeuratOut/filt0.9_seurat.RDa
 table(filtered_seurat$sample)
 
 pop.split <- SplitObject(filtered_seurat, split.by = "sample") 
+pop.split <- SplitObject(snr3filt, split.by = "sample") 
 
 # Chen et al, 2021, used DoubletFinder tool with following criteria: 
 # number of artificial doublets (pN) of 0.25. 
@@ -109,7 +110,7 @@ for (i in 1:length(pop.split)) {
 }
 
 pop.singlets <- merge(x = pop.split[[1]], y = pop.split[[2]],
-                        project = "popscRNASeq")
+                        project = "singletSNR")
 
 pop.singlets
 table(pop.singlets$sample)
@@ -189,6 +190,7 @@ seurat_phase <- NormalizeData(pop.singlets,
 #'  
 #' PART 2: If you want to run on individual sample (not merged)
 pop.sample <- NormalizeData(filt0.9_500_200_cdata)
+pop.sample <- NormalizeData(cdata2)
 pop.sample <- FindVariableFeatures(pop.sample)
 pop.sample <- ScaleData(pop.sample)
 pop.sample <- RunPCA(pop.sample, nfeatures.print = 10)
@@ -235,7 +237,8 @@ DF.name = colnames(pop.sample@meta.data)[grepl("DF.classification", colnames(pop
 # 
 # VlnPlot(pop.sample, features = "nFeature_RNA", group.by = DF.name, pt.size = 0.1)
 filt0.9_500_200_cdata1_dblt = pop.sample[, pop.sample@meta.data[, DF.name] == "Singlet"]
-dim(filt0.9_500_200_cdata1_dblt)
+filt0.8_500_200_cdata2_dblt = pop.sample[, pop.sample@meta.data[, DF.name] == "Singlet"]
+dim(filt0.8_500_200_cdata2_dblt)
 
 # mean number of counts for each cell and save the results as table
 # counts_per_gene_cdata1_dblt <- Matrix::rowSums(pop.sample, slot = 'counts')

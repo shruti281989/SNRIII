@@ -5,31 +5,43 @@ set -eux
 
 # singularity
 export SINGULARITY_BINDPATH="/mnt:/mnt"
-singc=$(realpath ../../single_cell_analysis_poplar/singularity/cellranger_7.0.0.sif)
+# singc=$(realpath ../../single_cell_analysis_poplar/singularity/cellranger_7.0.0.sif)
 
-proj=u2022027
-mail=huge_ashes@yahoo.com
+singc=/mnt/picea/home/schoudhary/shruti/single_cell_analysis_poplar/singularity/cellranger_7.0.0.sif
 
-out=$(realpath ../data)/CellRangerCount
+# proj=u2022027
+# mail=huge_ashes@yahoo.com
+# 
+# out=$(realpath ../data)/CellRangerCount
+# 
+# if [ ! -d $out ]; then
+#     mkdir -p $out
+# fi
 
-if [ ! -d $out ]; then
-    mkdir -p $out
-fi
+# kclfolder=P27752_1001
+# kclfolder=kcl0
 
-kclfolder=P27752_1001
-# knofolder=P27752_1002
+knofolder=P27752_1002
+# knofolder=kno0
 
-kclreads=$(realpath ../data/raw/kcl)
+# kclreads=$(realpath ../data/raw/kcl)
+# kclreads=/mnt/picea/home/schoudhary/shruti/SNRIII/data/raw/kcl
+
 # knoreads=$(realpath ../data/raw/kno)
+knoreads=/mnt/picea/home/schoudhary/shruti/SNRIII/data/raw/kno
 
-kclsample=P27752_1001
-# knosample=P27752_1002
+# kclsample=P27752_1001
+knosample=P27752_1002
 
-ref_transc=$(realpath ../../single_cell_analysis_poplar/data/reference/cellrangeref/Potra02_genome)
+# ref_transc=$(realpath ../../single_cell_analysis_poplar/data/reference/cellrangeref/Potra02_genome)
+# ref_transc=/mnt/picea/home/schoudhary/shruti/SNRIV/Potra02_genome
+ref_transc=/mnt/picea/projects/aspseq/htuominen/single_cell_analysis_poplar/data/reference/cellrangeref/Potra02_genome
 
-sbatch -A $proj -p node -w picea --mem 120G --mail-user=$mail \
--o $out/kcl.out -e $out/kcl.err \
-./runCellRangerCount.sh \
-$singc $kclfolder $kclreads $kclsample $ref_transc
+# sbatch -A $proj -p node -w picea --mem 120G --mail-user=$mail \
+# -o $out/kcl.out -e $out/kcl.err \
 
-#$singc $knofolder $knoreads $knosample $ref_transc
+# ~/shruti/SNRIII/pipeline/runCellRangerCount.sh \
+# $singc $kclfolder $kclreads $kclsample $ref_transc
+
+~/shruti/SNRIII/pipeline/runCellRangerCount.sh \
+$singc $knofolder $knoreads $knosample $ref_transc

@@ -32,16 +32,15 @@
 #' 
 #' Tutorials from the following sources were followed:
 #' https://hbctraining.github.io/scRNA-seq/lessons/04_SC_quality_control.html
-#' https://satijalab.org/seurat/archive/v3.0/pbmc3k_tutorial.html
 #' https://www.bioinformatics.babraham.ac.uk/training/10XRNASeq/seurat_workflow.html
 #' https://github.com/hbctraining/scRNA-seq/blob/master/lessons/mitoRatio.md
-#' palette (http://www.cookbook-r.com/Graphs/Colors_(ggplot2)/#a-colorblind-friendly-palette)
 #' https://github.com/Woodformation1136/SingleCell
 #' http://barcwiki.wi.mit.edu/wiki/SOP/scRNA-seq/Slingshot
 #' https://broadinstitute.github.io/2019_scWorkshop/functional-pseudotime-analysis.html#slingshot-map-pseudotime
 #' https://biocellgen-public.svi.edu.au/mig_2019_scrnaseq-workshop/advanced-exercises.html
 #' https://github.com/cellgeni/notebooks/blob/master/notebooks/new-10kPBMC-Scanpy.ipynb
-
+#' https://bioconductor.org/books/3.17/OSCA.basic/quality-control.html#quality-control-motivation
+#' 
 #' 1. Load packages
 
 set.seed(42)
@@ -68,7 +67,6 @@ suppressPackageStartupMessages({
 })
 
 #' 1. Load cellranger output (.h5 matrix) for control (kcl) and treated (kno3)
-
 # setwd("/mnt/picea/home/schoudhary/shruti/SNRIII/data/SeuratOut/")
 ctrl1.data <- Read10X_h5("/mnt/picea/home/schoudhary/shruti/SNRIII/data/CellRangerCount/kcl/outs/filtered_feature_bc_matrix.h5")
 # 20539 x 37184
@@ -116,27 +114,13 @@ merged_seurat <- merge(x = cdata1, y = tdata1,
                        add.cell.id = c("ctrl", "kno"))
 # 34756 x 28217
 
-# Because the same cell IDs can be used for different samples, we add a 
-# sample-specific prefix to each of cell IDs using add.cell.id, 
-# check metadata of merged object to see these prefixes in rownames:
-# head(merged_seurat@meta.data)
-# tail(merged_seurat@meta.data)
-# View(merged_seurat@meta.data)
-# ncol(merged_seurat)
-
 # Retrieve specific values from the metadata
 # https://satijalab.org/seurat/articles/essential_commands.html
-# UMIGene <- merged_seurat[[c("nUMI", "nGene")]]
 
 # FetchData can pull anything from expression matrices, cell embeddings, or metadata
 # FetchData(object = merged_seurat, vars = c(""))
 
-#' while processing all runs, merge all data into one object
-# alldata <- merge(cdata, c(cdata1, tdata, tdata1, ndata),
-#                  add.cell.ids = c("kcl", "kcl1", "kno", "kno1", "normal"))
-
 # Remove the elements not needed after merging: 
-rm(cdata1, tdata1, n.data, ndata, ctrl1.data, kno1.data)
 # garbage collect to free up memory
 gc()
 
@@ -144,10 +128,14 @@ gc()
 # No. of genes detected per UMI: this metric with give us an idea of 
 # data complexity (more genes detected per UMI, more complex our data)
 # Add number of genes per UMI for each cell to metadata
-
 merged_seurat$log10GenesPerUMI <- log10(merged_seurat$nFeature_RNA) / 
   log10(merged_seurat$nCount_RNA)
+
 #' 
+#' Compute percent mito and  chloroplast ratio
+# merged_seurat$NuclRatio <- PercentageFeatureSet(object = merged_seurat, 
+#                                                 pattern = "^Potr")
+# The mito and cp tratio is less than 5%
 #' mitochondrial ratio: this metric was not calculated since reference 
 #' used for cellranger doesn't have mito or chloroplast genes
 #' 
@@ -155,7 +143,6 @@ merged_seurat$log10GenesPerUMI <- log10(merged_seurat$nFeature_RNA) /
 #' like cell IDs, condition etc., use the $ operator. But we extract dataframe 
 #' into a separate variable instead to avoid affecting the original merged_seurat object.
 #' Create a metadata frame by extracting metadata slot from the seurat object
-
 metadata <- merged_seurat@meta.data
 
 #'Add cell IDs to metadata
@@ -169,14 +156,13 @@ metadata <- metadata %>%
 #'
 #' Get sample names for each cell based on cell prefix:
 metadata$sample <- NA
-metadata$sample[which(str_detect(metadata$cells, "^ctrl_"))] <- "ctrl"
-metadata$sample[which(str_detect(metadata$cells, "^kno_"))] <- "kno"
-
-# metadata$sample[which(str_detect(metadata$cells, "^normal_"))] <- "normal"
+metadata$sample[which(str_detect(metadata$cells, "^ctrl1_"))] <- "ctrl1"
+metadata$sample[which(str_detect(metadata$cells, "^kno1_"))] <- "kno1"
 
 #'
 #' Add metadata back to Seurat object
 merged_seurat@meta.data <- metadata
+
 #'
 #'2.3. Assessing quality metrics
 #' Cell counts:
@@ -239,10 +225,18 @@ metadata %>%
   geom_vline(xintercept = 0.85) +
   ggtitle("Genes Per UMI")
 
+metadata %>% 
+  ggplot(aes(color=sample, x=mitoRatio, fill=sample)) + 
+  geom_density(alpha = 0.2) + 
+  scale_x_log10() + 
+  theme_classic() +
+  geom_vline(xintercept = 0.2)
+
 #' QC metrics plot some more examples
-VlnPlot(merged_seurat, features = c("nGene", "nUMI"), ncol = 2)
+VlnPlot(merged_seurat, features = c("nGene", "nUMI", "mtcpRatio"), ncol = 3)+
+  NoLegend()
 FeatureScatter(merged_seurat, feature1 = "nUMI", feature2 = "nGene")
-as.data.frame(merged_seurat@assays$RNA@counts[1:10, 1:2])
+
 #'
 # mean number of counts for each cell or gene with or without sample specificity
 counts_per_cell <- Matrix::colSums(merged_seurat, slot = 'counts')
@@ -263,16 +257,17 @@ plot(sort(genes_per_cell), xlab='cell', log='y', main='genes per cell (ordered)'
 #' std is: nUMI > 200 & nFeature_RNA < 2500 & percent.mt < 5
 #' This step is crucial: I filtered low quality reads at following thresholds
 #' 
-filtered_seurat <- subset(x = merged_seurat, subset= (nUMI >= 500) & 
+filtered_seurat <- subset(x = merged_seurat, subset= (nUMI >= 500) &
                             (nGene >= 200) &
                             (log10GenesPerUMI > 0.9))
 # 28491 x 28217
-# table(filtered_seurat$sample)
 # ctrl   kno 
 # 15560 12931 
 
+table(filtered_seurat$sample)
+
 # or you can filter at:
-# filt0.8_seurat <- subset(x = merged_seurat, subset= (nUMI >= 500) & 
+# filt0.8_seurat <- subset(x = merged_seurat, subset= (nUMI >= 500) &
 #                             (nGene >= 200) &
 #                             (log10GenesPerUMI > 0.8))
 # 34756 x 28217
@@ -290,14 +285,12 @@ filtered_seurat <- subset(x = merged_seurat, subset= (nUMI >= 500) &
 
 #' 2.3.2. Gene-level filtering
 #' Removed genes with zero expression in all cells 
-
 filt_counts <- GetAssayData(object = filtered_seurat, slot = "counts")
 nonzero <- filt_counts > 0
-
 # keep only genes which are expressed in 3 or more cells.
 keep_genes3 <- Matrix::rowSums(nonzero) >= 3
 filt_counts3 <- filt_counts[keep_genes3, ]
-# summary (keep_genes3)
+summary (keep_genes3)
 # Mode   FALSE    TRUE 
 # logical     758   27459
 

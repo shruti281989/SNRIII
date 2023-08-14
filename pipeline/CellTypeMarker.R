@@ -4,15 +4,13 @@ split_seurat <- split_seurat[c("ctrl", "kno")]
 # and plot using the object split_seurat$ctrl
 
 #' Plot using different methods
-DefaultAssay(seurat_integrated) <- "RNA"
+DefaultAssay(split_seurat$kno) <- "RNA"
 
-DotPlot(seurat_integrated, features = nrt_han, cols = c("blue", "red"), 
+DotPlot(seurat_integrated, features = , cols = c("blue", "red"), 
         dot.scale = 8, split.by = "sample") + 
   RotatedAxis() + ylab("Sample-wise Cluster number") +xlab("Genes")+coord_flip()
 
-ISSA= c("Potra2n4c8952","Potra2n5c10536","Potra2n2c6410","Potra2n14c27598", "Potra2n4c9696", "Potra2n2c5606", "Potra2n7c16495", "Potra2n5c11765", "Potra2n7c16234", "Potra2n5c11573", "Potra2n3c7305", "Potra2n2c6235")
-
-DotPlot(split_seurat$kno, features = ISSA, cols ="RdBu") +
+DotPlot(seurat_integrated, features = c("Potra2n10c20340","Potra2n8c16875","Potra2n10c20339","Potra2n9c20082"), cols ="RdBu") +
   RotatedAxis()+ ylab("Cluster Number") +xlab("Genes")+coord_flip()
 
 # cesA8,xcp2, xcp2b,PIB,NiR, NiA, F5Ha, F5Hb, IRXa,IRXb,MYB103, WEB 
@@ -323,3 +321,7 @@ nitrateInducible <- c("Potra2n18c32131","Potra2n6c14829","Potra2n1c2483",	"Potra
                       "Potra2n7c16165","Potra2n5c11527","Potra2n9c19330")
                       # "Potra2n10c21333", "Potra2n12c24188", "Potra2n14c26447", "Potra2n17c30923",
                       # "Potra2n2c5325", "Potra2n4c9349","Potra2n8c17736")
+lgo <- c("Potra2n10c20340","Potra2n8c16875","Potra2n10c20339","Potra2n9c20082")
+
+# 5.8 Validation
+issa <- c("Potra2n4c8952","Potra2n5c10536","Potra2n2c6410","Potra2n14c27598", "Potra2n4c9696", "Potra2n2c5606", "Potra2n7c16495", "Potra2n5c11765", "Potra2n7c16234", "Potra2n5c11573", "Potra2n3c7305", "Potra2n2c6235")
