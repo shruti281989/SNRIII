@@ -35,14 +35,10 @@ suppressPackageStartupMessages({
 #' PART 1: run doublet finder on the filtered and merged data
 
 load("/mnt/picea/home/schoudhary/shruti/SNRIII/data/SeuratOut/filt0.9_seurat.RData")
-
-# or you can use the other filtered dataset
-# load("/mnt/picea/home/schoudhary/shruti/SNRIII/data/SeuratOut/filt0.8_seurat.RData")
-
 table(filtered_seurat$sample)
 
 pop.split <- SplitObject(filtered_seurat, split.by = "sample") 
-pop.split <- SplitObject(snr3filt, split.by = "sample") 
+pop.split <- SplitObject(filt0.8_seurat, split.by = "sample") 
 
 # Chen et al, 2021, used DoubletFinder tool with following criteria: 
 # number of artificial doublets (pN) of 0.25. 
@@ -118,6 +114,9 @@ table(pop.singlets$sample)
 # ctrl   kno 
 # 11048 12672 
 
+# kclmtcp knomtcp 
+#  
+
 metadata_singlet <- pop.singlets@meta.data
 
 #' Re-assess QC if you needed
@@ -189,8 +188,11 @@ seurat_phase <- NormalizeData(pop.singlets,
 #' go to seuratSNRIII.R and continue from step 2.5
 #'  
 #' PART 2: If you want to run on individual sample (not merged)
-pop.sample <- NormalizeData(filt0.9_500_200_cdata)
-pop.sample <- NormalizeData(cdata2)
+pop.split <- SplitObject(filtered_seurat, split.by = "sample")
+
+# pop.sample <- NormalizeData(pop.split$knomtcp)
+pop.sample <- NormalizeData(pop.split$kclmtcp)
+
 pop.sample <- FindVariableFeatures(pop.sample)
 pop.sample <- ScaleData(pop.sample)
 pop.sample <- RunPCA(pop.sample, nfeatures.print = 10)
@@ -206,7 +208,7 @@ co2 <- sort(which((percent.stdv[1:length(percent.stdv) - 1] -
                      percent.stdv[2:length(percent.stdv)]) > 0.1), 
             decreasing = T)[1] + 1
 min.pc <- min(co1, co2)
-# min.pc
+min.pc
 
 # finish pre-processing
 pop.sample <- RunUMAP(pop.sample, dims = 1:min.pc)
@@ -232,16 +234,18 @@ pop.sample <- doubletFinder_v3(seu = pop.sample,
                                nExp = nExp)
 DF.name = colnames(pop.sample@meta.data)[grepl("DF.classification", colnames(pop.sample@meta.data))]
 
-# cowplot::plot_grid(ncol = 2, DimPlot(pop.sample, group.by = "orig.ident") + NoAxes(),
-#                    DimPlot(pop.sample, group.by = DF.name) + NoAxes())
-# 
-# VlnPlot(pop.sample, features = "nFeature_RNA", group.by = DF.name, pt.size = 0.1)
-filt0.9_500_200_cdata1_dblt = pop.sample[, pop.sample@meta.data[, DF.name] == "Singlet"]
-filt0.8_500_200_cdata2_dblt = pop.sample[, pop.sample@meta.data[, DF.name] == "Singlet"]
-dim(filt0.8_500_200_cdata2_dblt)
+kclmtcp= pop.sample[, pop.sample@meta.data[, DF.name] == "Singlet"]
+# 37254 x 12122 
+# 37254 x  
 
-# mean number of counts for each cell and save the results as table
-# counts_per_gene_cdata1_dblt <- Matrix::rowSums(pop.sample, slot = 'counts')
-seurat_phase <- NormalizeData(filtered_seurat, 
-                              normalization.method = "LogNormalize", 
-                              scale.factor = 10000)
+knomtcp= pop.sample[, pop.sample@meta.data[, DF.name] == "Singlet"]
+# 37254 x 9974 
+# 37254 x 
+
+singlets <- merge(x = kclmtcp, y = knomtcp, project = "singletSNRIII")
+# kclmtcp knomtcp 
+# 12122    9974 
+
+# save singlets merged data
+
+seurat_phase <- NormalizeData(singlets)

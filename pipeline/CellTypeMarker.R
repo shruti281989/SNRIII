@@ -4,15 +4,17 @@ split_seurat <- split_seurat[c("ctrl", "kno")]
 # and plot using the object split_seurat$ctrl
 
 #' Plot using different methods
-DefaultAssay(split_seurat$kno) <- "RNA"
+DefaultAssay(integClCyc) <- "RNA"
 
 DotPlot(seurat_integrated, features = , cols = c("blue", "red"), 
         dot.scale = 8, split.by = "sample") + 
   RotatedAxis() + ylab("Sample-wise Cluster number") +xlab("Genes")+coord_flip()
 
-DotPlot(seurat_integrated, features = c("Potra2n10c20340","Potra2n8c16875","Potra2n10c20339","Potra2n9c20082"), cols ="RdBu") +
+DotPlot(split_seurat$ctrl, features = bsp, cols ="RdBu") +
   RotatedAxis()+ ylab("Cluster Number") +xlab("Genes")+coord_flip()
 
+bsp <- c("Potra2n13c25437", "Potra2n13c25438", "Potra2n13c25439", 
+         "Potra2n13c25440", "Potra2n13c25589", "Potra2n158s34776", "Potra2n484s35780")
 # cesA8,xcp2, xcp2b,PIB,NiR, NiA, F5Ha, F5Hb, IRXa,IRXb,MYB103, WEB 
 
 VlnPlot(seurat_integrated, features = phloem)
@@ -91,7 +93,7 @@ lac_fam <- c("Potra2n10c20714","Potra2n10c20806","Potra2n11c22797","Potra2n11c23
              "Potra2n15c28842","Potra2n16c30017","Potra2n16c30239","Potra2n16c30241","Potra2n16c30273","Potra2n16c30274","Potra2n6c13254",
              "Potra2n19c33334","Potra2n19c33575","Potra2n1c1775","Potra2n1c2108","Potra2n1c2159","Potra2n1c2996","Potra2n1c3502","Potra2n1c447","Potra2n317s35299","Potra2n4c9830","Potra2n5c11061","Potra2n5c11062","Potra2n5c11063","Potra2n6c14486","Potra2n6c14515","Potra2n6c14571","Potra2n6c14577","Potra2n7c16431","Potra2n8c17197","Potra2n8c17280","Potra2n9c18755","Potra2n9c19221","Potra2n9c19763","Potra2n9c19826")
 #' 
-#' 5.4. Forrays
+#' 5.4. For rays
 #' PIRIN2 could be a marker of lignified xylem or rays
 prn2 <- c("Potra2n2c4342","Potra2n14c27610", "Potra2n9c19440")
 cad <- c("Potra2n11c22541", "Potra2n16c29439", "Potra2n16c29966", "Potra2n1c2317", "Potra2n1c2619", "Potra2n1c2670", "Potra2n1c3264","Potra2n2c6287", "Potra2n6c13590", "Potra2n6c15177", "Potra2n9c19275", "Potra2n9c19467")
@@ -325,3 +327,6 @@ lgo <- c("Potra2n10c20340","Potra2n8c16875","Potra2n10c20339","Potra2n9c20082")
 
 # 5.8 Validation
 issa <- c("Potra2n4c8952","Potra2n5c10536","Potra2n2c6410","Potra2n14c27598", "Potra2n4c9696", "Potra2n2c5606", "Potra2n7c16495", "Potra2n5c11765", "Potra2n7c16234", "Potra2n5c11573", "Potra2n3c7305", "Potra2n2c6235")
+
+# 5.9 snRNA Seq vegetative shoot apex from Conde et al., 2022
+condeClst <- c("Potra2n10c20548","Potra2n10c20676","Potra2n10c20892","Potra2n10c21070","Potra2n10c21478","Potra2n10c21634","Potra2n10c22054","Potra2n12c24397","Potra2n12c24714","Potra2n14c26506","Potra2n14c27625","Potra2n15c27961","Potra2n15c29012","Potra2n16c29503","Potra2n16c29820","Potra2n17c30845","Potra2n18c32645","Potra2n18c32648","Potra2n18c32756","Potra2n18c33124","Potra2n1c1621","Potra2n1c2062","Potra2n1c2670","Potra2n1c534","Potra2n1c923","Potra2n2c4945","Potra2n2c5108","Potra2n2c5386","Potra2n2c5448","Potra2n2c5872","Potra2n2c5894","Potra2n2c6106","Potra2n3c7548","Potra2n3c7649","Potra2n3c8006","Potra2n4c10284","Potra2n4c10286","Potra2n4c10286","Potra2n4c8449","Potra2n4c9001","Potra2n5c12554","Potra2n6c13216","Potra2n6c13402","Potra2n7c16584","Potra2n8c17128")
