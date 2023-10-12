@@ -146,12 +146,13 @@ cbind(cluster=keepClusters, numDE_genes=n_de,
 # mkdir clustWiseAllDE
 for(cluster in 1:length(keepClusters)){
   # Full results
-  filePath <- paste0("output/afterDbltRemoval/clustWiseAllDE/Cluster", keepClusters[cluster])
-  out <- res[[cluster]][,c("gene", "logFC", "logCPM", "p_adj")]
-  write.csv(out, file = paste0(filePath, "_ctrlkno.csv"), quote=F, row.names = F)
-  
+  # filePath <- paste0("data/SeuratOut/output/afterDbltRemoval/pseudobulkDEClustWiseAftrDblt/Cluster", keepClusters[cluster])
+  # out <- res[[cluster]][,c("gene", "logFC", "logCPM", "p_adj")]
+  # write.csv(out, file = paste0(filePath, "_ctrlkno.csv"), quote=F, row.names = F)
+  # 
   # Sig genes
-  filePath <- paste0("output/afterDbltRemoval/clustWiseSigDE/Cluster", keepClusters[cluster])
+  # filePath <- paste0("data/SeuratOut/output/afterDbltRemoval/pseudobulkDEClustWiseAftrDblt/clustWiseSigDE/Cluster", keepClusters[cluster])
+  filePath <- paste0("data/SeuratOut/output/afterDbltRemoval/mtCp/Cluster", keepClusters[cluster])
   out <- res_fil[[cluster]][,c("gene", "logFC", "logCPM", "p_adj")]
   write.csv(out, file = paste0(filePath, "_", "ctrlkno.csv"), quote=F, row.names = F)
   
@@ -253,3 +254,182 @@ sel <- et$table$padj <= 0.05 & abs(et$table$logFC) >=0 & ! is.na(et$table$padj)
 
 write.csv(et,file="results.csv")
 write.csv(et[sel,],file="genes.csv")
+
+# Restart R
+suppressPackageStartupMessages({
+  library(data.table)
+  library(here)
+  library(hyperSpec)
+  library(RColorBrewer)
+  library(gplots)
+  library(dplyr)
+  library(reshape2)
+  library(tidyverse)
+  library(pheatmap)
+})
+
+#' * Graphics
+pal=brewer.pal(8,"Dark2")
+hpal <- colorRampPalette(c("blue","white","red"))(100)
+mar <- par("mar")
+
+#' DEGs in SNRIII
+degSnr <-read.delim(here("~/shruti/SNR-u2023011/analysis/snrIII/clRngrCntNucl/degSNRIII.txt"), header = T,sep = "\t")
+upKno <- degSnr %>% filter (degSnr$status == "up in kno")  %>%pull(gene)
+dnkno <- degSnr %>% filter (degSnr$status == "down in kno")  %>%pull(gene)
+
+aspwood <- read.table("~/shruti/SNR-u2023011/analysis/publisheddatasets/AspWood_tpm.txt", header = TRUE)
+aspwoodtpm <- dcast(aspwood, gene_id ~ sample_name)
+orderaspwood <- c("T1-Phloem-01",
+                  "T1-Phloem-02",
+                  "T1-Phloem-03",
+                  "T1-Phloem-04",
+                  "T1-Phloem-05",
+                  "T1-Cambium-06",
+                  "T1-Cambium-07",
+                  "T1-Cambium-08",
+                  "T1-Cambium-09",
+                  "T1-Cambium-10",
+                  "T1-Cambium-11",
+                  "T1-Cambium-12",
+                  "T1-Expanding-xylem-13",
+                  "T1-Expanding-xylem-14",
+                  "T1-Expanding-xylem-15",
+                  "T1-Expanding-xylem-16",
+                  "T1-Expanding-xylem-17",
+                  "T1-Expanding-xylem-18",
+                  "T1-Expanding-xylem-19",
+                  "T1-Lignified-xylem-20",
+                  "T1-Lignified-xylem-21",
+                  "T1-Lignified-xylem-22",
+                  "T1-Lignified-xylem-23",
+                  "T1-Lignified-xylem-24",
+                  "T1-Lignified-xylem-25",
+                  "T2-Phloem-01",
+                  "T2-Phloem-02",
+                  "T2-Phloem-03",
+                  "T2-Phloem-04",
+                  "T2-Phloem-05",
+                  "T2-Cambium-06",
+                  "T2-Cambium-07",
+                  "T2-Cambium-08",
+                  "T2-Cambium-09",
+                  "T2-Cambium-10",
+                  "T2-Cambium-11",
+                  "T2-Expanding-xylem-12",
+                  "T2-Expanding-xylem-13",
+                  "T2-Expanding-xylem-14",
+                  "T2-Expanding-xylem-15",
+                  "T2-Expanding-xylem-16",
+                  "T2-Expanding-xylem-17",
+                  "T2-Expanding-xylem-18",
+                  "T2-Expanding-xylem-19",
+                  "T2-Lignified-xylem-20",
+                  "T2-Lignified-xylem-21",
+                  "T2-Lignified-xylem-22",
+                  "T2-Lignified-xylem-23",
+                  "T2-Lignified-xylem-24",
+                  "T2-Lignified-xylem-25",
+                  "T2-Lignified-xylem-26",
+                  "T3-Phloem-01",
+                  "T3-Phloem-02",
+                  "T3-Phloem-03",
+                  "T3-Phloem-04",
+                  "T3-Phloem-05",
+                  "T3-Cambium-06",
+                  "T3-Cambium-07",
+                  "T3-Cambium-08",
+                  "T3-Cambium-09",
+                  "T3-Cambium-10",
+                  "T3-Cambium-11",
+                  "T3-Cambium-12",
+                  "T3-Cambium-13",
+                  "T3-Cambium-14",
+                  "T3-Expanding-xylem-15",
+                  "T3-Expanding-xylem-16",
+                  "T3-Expanding-xylem-17",
+                  "T3-Expanding-xylem-18",
+                  "T3-Expanding-xylem-19",
+                  "T3-Expanding-xylem-20",
+                  "T3-Expanding-xylem-21",
+                  "T3-Lignified-xylem-22",
+                  "T3-Lignified-xylem-23",
+                  "T3-Lignified-xylem-24",
+                  "T3-Lignified-xylem-25",
+                  "T3-Lignified-xylem-26",
+                  "T3-Lignified-xylem-27",
+                  "T3-Lignified-xylem-28",
+                  "T4-Phloem-01",
+                  "T4-Phloem-02",
+                  "T4-Phloem-03",
+                  "T4-Phloem-04",
+                  "T4-Phloem-05",
+                  "T4-Cambium-06",
+                  "T4-Cambium-07",
+                  "T4-Cambium-08",
+                  "T4-Cambium-09",
+                  "T4-Cambium-10",
+                  "T4-Cambium-11",
+                  "T4-Cambium-12",
+                  "T4-Expanding-xylem-13",
+                  "T4-Expanding-xylem-14",
+                  "T4-Expanding-xylem-15",
+                  "T4-Expanding-xylem-16",
+                  "T4-Expanding-xylem-17",
+                  "T4-Expanding-xylem-18",
+                  "T4-Expanding-xylem-19",
+                  "T4-Expanding-xylem-20",
+                  "T4-Lignified-xylem-21",
+                  "T4-Lignified-xylem-22",
+                  "T4-Lignified-xylem-23",
+                  "T4-Lignified-xylem-24",
+                  "T4-Lignified-xylem-25",
+                  "T4-Lignified-xylem-26",
+                  "T4-Lignified-xylem-27",
+                  "T4-Lignified-xylem-28",
+                  "gene_id")
+
+aspwoodtpm <- aspwoodtpm[orderaspwood]
+rownames(aspwoodtpm) <- aspwoodtpm$gene_id
+aspdata <- as.matrix(select(aspwoodtpm, c(1, 1:107)))
+
+atnnotation <- read.delim(here("~/shruti/ERF85GeneExp/doc/potra_atgenes.txt"), header = FALSE, sep = "\t")
+colnames(atnnotation) <- c("Potra_ID", "AT_Symbols")
+degAnot <- atnnotation[match(rownames(aspwoodtpm), atnnotation$Potra_ID),]
+all(rownames(aspwoodtpm) == degAnot$Potra_ID)
+
+hmap2 <- function(selGene, file_name) {
+  tres <- aspdata[rownames(aspdata) %in% selGene, ]
+  tres1 <- tres[rowSums(tres != 0) > 0, ]
+  # png(file.path(here("~/shruti/SNR-u2023011/analysis/plots/"),
+  #               paste0(file_name,".png")), res= 250,height = 2000, width = 2000)
+  # 
+  svg(file.path(here("~/shruti/SNR-u2023011/analysis/plots/"),
+                paste0(file_name,".svg")), pointsize = 8)
+
+  heatmap.2(t(scale(t(tres1))),
+            distfun = pearson.dist,
+            hclustfun = function(X){hclust(X,method="ward.D2")},
+            trace="none", col=hpal, margins =c(18,18), cexCol = 0.1,
+            cexRow = 0.1, main = file_name, key = TRUE, keysize = 1,
+            Colv = FALSE, Rowv = TRUE, dendrogram = "row",
+            labRow = paste(rownames(tres1), degAnot$AT_Symbols[match(rownames(tres1), degAnot$Potra_ID)])
+  )
+  dev.off()
+}
+
+hmap2(dnkno,"dnKno")
+
+# If the logTPM+1 is needed
+aspdatalog <- log2(aspdata + 1)
+tres <- aspdatalog[rownames(aspdatalog) %in% upKno, ]
+tres1 <- tres[rowSums(tres != 0) > 0, ]
+max(tres1)
+tres2 <- tres1[rowSums(tres1[])>1,]
+
+pheatmap(tres2, 
+         fontsize = 7,
+         cluster_cols = FALSE,
+         color = mako(100),
+         clustering_method = "ward.D2",
+         border_color = NA)

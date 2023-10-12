@@ -210,6 +210,8 @@ co2 <- sort(which((percent.stdv[1:length(percent.stdv) - 1] -
 min.pc <- min(co1, co2)
 min.pc
 
+# 20 -knomtcp
+
 # finish pre-processing
 pop.sample <- RunUMAP(pop.sample, dims = 1:min.pc)
 pop.sample <- FindNeighbors(object = pop.sample, dims = 1:min.pc)              
@@ -228,24 +230,21 @@ optimal.pk <- as.numeric(levels(optimal.pk))[optimal.pk]
 nExp <- round(optimal.pk * nrow(pop.sample@meta.data))
 
 # run DoubletFinder
-pop.sample <- doubletFinder_v3(seu = pop.sample, 
-                               PCs = 1:min.pc, 
-                               pK = optimal.pk,
-                               nExp = nExp)
+pop.sample <- doubletFinder_v3(seu = pop.sample, PCs = 1:min.pc, 
+                               pK = optimal.pk, nExp = nExp)
 DF.name = colnames(pop.sample@meta.data)[grepl("DF.classification", colnames(pop.sample@meta.data))]
 
 kclmtcp= pop.sample[, pop.sample@meta.data[, DF.name] == "Singlet"]
-# 37254 x 12122 
-# 37254 x  
+# 17855
 
 knomtcp= pop.sample[, pop.sample@meta.data[, DF.name] == "Singlet"]
-# 37254 x 9974 
-# 37254 x 
+# 11131
 
-singlets <- merge(x = kclmtcp, y = knomtcp, project = "singletSNRIII")
+# pop.singlets <- merge(x = kclmtcp, y = knomtcp, project = "singletSNRIII")
+# table(pop.singlets$sample)
 # kclmtcp knomtcp 
 # 12122    9974 
 
 # save singlets merged data
 
-seurat_phase <- NormalizeData(singlets)
+# seurat_phase <- NormalizeData(singlets)

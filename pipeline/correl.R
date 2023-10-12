@@ -17,28 +17,24 @@ suppressPackageStartupMessages({
 options(bitmapType = "cairo")
 
 # load data Without mtcp genome and without cell cycle
-load ("~/shruti/SNRIII/data/SeuratOut/integafterdbltremoval.RData")
-integ <- subset(seurat_integrated, idents = "2", invert=T)
-
-# Without mtcp genome and with cell cycle
-load("~/shruti/SNR-u2023011/analysis/snrIII/clRngrCntNucl/snrIIINuclWthClCyc.RData")
-integ <- subset(integClCyc, idents = "0", invert=T)
+integ<- readRDS("~/shruti/SNRIII/data/SeuratOut/integ.rds")
+split_seurat <- SplitObject(integ, split.by = "sample")
+kcl0 <- split_seurat[["ctrl"]]
+rm(split_seurat)
 
 # With mtcp genome and with cell cycle
-integMtCp <- readRDS("~/shruti/SNRIII/data/SeuratOut/integMtCp.rds")
-Idents(integMtCp) <- "integrated_snn_res.0.6"
-# decided to remove cluster 0
-integ <- subset(integMtCp, idents = "0", invert=T)
+integ8 <- readRDS("~/shruti/SNR-u2023011/analysis/snrIII/clRngrCntNuclMtCp/mtCp/integ8.rds")
+Idents(integ8) <- "integrated_snn_res.0.6"
 
-# With mtcp genome and filtered percent.mt >5 and with cell cycle
-integMt5 <- readRDS("~/shruti/SNRIII/data/SeuratOut/integMt5.rds")
-# decided to remove cluster, 0
-integ <- subset(integMt5, idents = "0", invert=T)
+# decided to remove cluster 1 from kcl
+integ8 <- subset(integ8, subset = seurat_clusters == '1', invert=T)
 
 # Split the data you loaded and extract only the control
-split_seurat <- SplitObject(integ, split.by = "sample")
+split_seurat <- SplitObject(integ8, split.by = "sample")
 kcl0 <- split_seurat[["kclmtcp"]]
+# kno0 <- split_seurat[["knomtcp"]]
 # kcl0 <- split_seurat[["ctrl"]]
+rm(split_seurat)
 
 #Setting default assay back to RNA
 DefaultAssay(kcl0) <- "RNA"
@@ -53,7 +49,7 @@ kcl0$orig.ident <- paste0("kcl0_",kcl0$seurat_clusters)
 kcl0$orig.samp <- "kcl0"
 
 #Check umap once again
-DimPlot(kcl0, reduction = "umap", pt.size = 0.01, label = TRUE)
+# DimPlot(kcl0, reduction = "umap", pt.size = 0.01, label = TRUE)
 #FeaturePlot(kcl0, features = c("nCount_RNA","nFeature_RNA"))
 
 #pseudobulk

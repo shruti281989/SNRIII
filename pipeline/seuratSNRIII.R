@@ -64,6 +64,7 @@ suppressPackageStartupMessages({
   library(scales)
   library(ggplot2)
   library(here)
+  library(data.table)
 })
 
 #' 1. Load cellranger output (.h5 matrix) for control (kcl) and treated (kno3)
@@ -101,7 +102,7 @@ merged_seurat <- merge(x = cdata1, y = tdata1, add.cell.id = c("ctrl", "kno"))
 # https://satijalab.org/seurat/articles/essential_commands.html
 
 # Remove the elements not needed after merging: 
-rm(cdata1,tdata1, ctrl1.data,kno1.data)
+rm(cdata1,tdata1,ctrl1.data,kno1.data)
 # garbage collect to free up memory
 gc()
 
@@ -242,10 +243,18 @@ plot(sort(genes_per_cell), xlab='cell', log='y', main='genes per cell (ordered)'
 filtered_seurat <- subset(x = merged_seurat, subset= (nUMI >= 500) &
                             (nGene >= 200) & (log10GenesPerUMI > 0.9) &
                             (percent.mt < 5) & (percent.cp < 5))
-table(filtered_seurat$sample)
+table(filt0.8_seurat$sample)
 # 28491 x 28217
 # ctrl   kno 
 # 15560 12931 
+
+# For mt cp genome
+# filt0.8_seurat <- subset(merged_seurat, subset= (nUMI >= 500) & (nGene >= 200)&
+#                            (percent.mt < 5) & (percent.cp < 5))
+
+filt0.8_seurat <- subset(merged_seurat, subset= (nUMI >= 1000) & (nGene >= 1000)&
+                           (nGene < 7000) & (nUMI < 70000) &
+                           (percent.mt < 5) & (percent.cp < 5))
 
 # or you can filter at:
 # filt0.8_seurat <- subset(x = merged_seurat, subset= (nUMI >= 500) & (nGene >= 200))
@@ -260,34 +269,32 @@ table(filtered_seurat$sample)
 # 20537 14154 
 
 # For mt cp genome,
-filt0.8_seurat <- subset(merged_seurat, subset= (nUMI >= 500) & (nGene >= 200))
+# filt0.8_seurat <- subset(merged_seurat, subset= (nUMI >= 500) & (nGene >= 200))
 # 37254x 34186
 # kclmtcp knomtcp 
 # 20581   13605
 
-saveRDS(filt0.8_seurat, file = "data/SeuratOut/output/mtCp/mtCpMnFilt0.8.rds")
-
-filt0.9_seurat <- subset(mrgdMtCpMnFt200, subset= (nUMI >= 500) & 
-                           (nGene >= 200) & (log10GenesPerUMI > 0.9))
 # 37254x 27855
 # kclmtcp knomtcp 
 # 15541   12314 
-saveRDS(filt0.9_seurat, file = "data/SeuratOut/output/mtCp/mtCpMnFilt0.9.rds")
+
+# saveRDS(filt0.9_seurat, file = "data/SeuratOut/output/mtCp/mtCpMnFilt0.9.rds")
+
 
 #' 2.3.2. Gene-level filtering , a redundant step- decided not to do this 
 #' Removed genes with zero expression in all cells 
-filt_counts <- GetAssayData(object = filtered_seurat, slot = "counts")
+filt_counts <- GetAssayData(object = filt0.8_seurat, slot = "counts")
 nonzero <- filt_counts > 0
 # keep only genes which are expressed in 3 or more cells.
-keep_genes3 <- Matrix::rowSums(nonzero) >= 3
-filt_counts3 <- filt_counts[keep_genes3, ]
-summary (keep_genes3)
+keep_genes <- Matrix::rowSums(nonzero) >= 10
+filt_counts <- filt_counts[keep_genes, ]
+summary (keep_genes)
 # Mode   FALSE    TRUE 
 # logical     758   27459
 
 #' 2.3.3. Re-assess QC metrics of the filtered Seurat object
 #' 
-filtered_seurat <- CreateSeuratObject(filt_counts3,
+filtered_seurat <- CreateSeuratObject(filt_counts,
                                       meta.data = filtered_seurat@meta.data)
 metadata_clean <- filtered_seurat@meta.data
 #' 
@@ -431,12 +438,13 @@ DimPlot(seurat_phase, reduction = "pca",
 # ‘regress out’ heterogeneity associated with cell cycle stage
 # However, for advanced users, it is recommended to use new normalization- SCTransform
 # 
+# Load mtcp 0.9 log singlets
 Snglt0.9 <- readRDS("~/shruti/SNRIII/data/SeuratOut/output/mtCp/Snglt0.9.rds")
-table(Snglt0.9$sample)
-Snglt0.9 <- subset(Snglt0.9,  subset= (percent.mt < 5) & 
-                     (percent.cp < 5))
-# Adjust the memory first
+Snglt0.9 <- subset(Snglt0.9,  subset= (percent.mt < 5) & (percent.cp < 5))
+
+# Adjust the memory
 options(future.globals.maxSize = 4000 * 1024^2)
+
 #' 
 split_seurat <- SplitObject(pop.singlets, split.by = "sample")
 split_seurat <- split_seurat[c("kclmtcp", "knomtcp")]
@@ -539,7 +547,7 @@ DimPlot(seurat_integrated, reduction = "umap", split.by = "Phase", label = TRUE,
         label.size = 6)
 
 # Extract identity and sample info to determine no. of cells per cluster per sample
-n_cells <- FetchData(seurat_integrated, 
+n_cells <- FetchData(integClCyc, 
                      vars = c("ident")) %>%
   dplyr::count(ident) %>%
   tidyr::spread(ident, n)
@@ -611,22 +619,25 @@ write.table(conserved_markers, file = "output/afterDbltRemoval/cons_marker.txt",
             row.names = T, col.names = T)
 
 # 6. decided not to regress cell cycle and find the markers
-load("data/SeuratOut/integafterdbltremoval.RData")
+seurat_integrated <- readRDS("data/SeuratOut/integ.rds")
 DefaultAssay(seurat_integrated) <- "RNA"
-
+# seurat_integrated <- subset(seurat_integrated, integrated_snn_res.0.6 == '2', invert=T)
+# seurat_integrated$oldclusters <- seurat_integrated$integrated_snn_res.0.6
+# seurat_integrated$seurat_clusters <- seurat_integrated@active.ident
+# seurat_integrated$orig.ident <- paste0("integ_",seurat_integrated$seurat_clusters)
+# seurat_integrated$orig.samp <- "integ"
+  
 split_seurat <- SplitObject(seurat_integrated, split.by = "sample")
 split_seurat <- split_seurat[c("ctrl", "kno")]
 
-# split_seurat <- SplitObject(merged_seurat, split.by = "sample")
-# split_seurat <- split_seurat[c("kcl", "kno", "kclClCyc", "knoClCyc")]
 for (i in 1:length(split_seurat)) {
-  split_seurat[[i]] <- NormalizeData(split_seurat[[i]], verbose = TRUE)
-  split_seurat[[i]] <- CellCycleScoring(split_seurat[[i]], 
-                                        g2m.features=c(g2phase,mphase), 
-                                        s.features=sphase)
-  split_seurat[[i]] <- FindVariableFeatures(split_seurat[[i]], 
-                                            selection.method = "vst", 
-                                            nfeatures = 2000)
+  # split_seurat[[i]] <- NormalizeData(split_seurat[[i]], verbose = TRUE)
+  # split_seurat[[i]] <- CellCycleScoring(split_seurat[[i]], 
+  #                                       g2m.features=c(g2phase,mphase), 
+  #                                       s.features=sphase)
+  # split_seurat[[i]] <- FindVariableFeatures(split_seurat[[i]], 
+  #                                           selection.method = "vst", 
+  #                                           nfeatures = 2000)
   split_seurat[[i]] <- SCTransform(split_seurat[[i]], variable.features.n = 3000
   )
 }
@@ -643,75 +654,26 @@ integ_anchors <- FindIntegrationAnchors(object.list = split_seurat,
 
 integClCyc <- IntegrateData(anchorset = integ_anchors, 
                                    normalization.method = "SCT")
+# Remove unwanted objects
+rm(split_seurat, i, integ_anchors, integ_features)
 
 DefaultAssay(integClCyc) <- "integrated"
 integClCyc <- ScaleData(integClCyc, verbose = FALSE)
 integClCyc <- RunPCA(integClCyc)
-integClCyc <- RunUMAP(integClCyc, dims = 1:50, reduction = "pca")
-DimPlot(integClCyc)
-
+integClCyc <- RunUMAP(integClCyc, dims = 1:50, reduction = "pca") #40
 ElbowPlot(object = integClCyc, ndims = 40)
 integClCyc <- FindNeighbors(integClCyc, dims = 1:50)
-                                
-integClCyc <- FindClusters(integClCyc, resolution = c(0.4, 0.6, 0.8, 1.0, 1.4))
-
-save.image("~/shruti/SNRIII/data/SeuratOut/integWthClCyc.RData")
-# save.image("~/shruti/SNRIII/data/SeuratOut/mtCpDbltRemClCycInteg.RData")
+integClCyc <- FindClusters(integClCyc, resolution = c(0.1, 0.3, 0.4, 0.5, 0.6, 0.8))
+DimPlot(integClCyc, label=T)
 
 Idents(object = integClCyc) <- "integrated_snn_res.0.6"
+integClCyc <- RunUMAP(integClCyc, dims = 1:30, reduction = "pca", seed.use = 5) #40
+integClCyc <- FindNeighbors(integClCyc, dims = 1:30)
+integClCyc <- FindClusters(integClCyc, resolution = c(0.1, 0.6), random.seed = 689213)
+DimPlot(integClCyc, label=T)
 
-p3 <- DimPlot(integClCyc, reduction = "umap", label = TRUE, label.size = 2)
-p4<- DimPlot(integClCyc, label = TRUE, split.by = "sample")  + NoLegend()
-p3
-
-# If cells group by cell cycle phase
-metrics <-  c("nUMI", "nGene", "S.Score", "G2M.Score")
-p5 <- FeaturePlot(integClCyc, reduction = "umap", features = metrics,
-                  pt.size = 0.4, sort.cell = TRUE, min.cutoff = 'q10', label = TRUE)
-DimPlot(integClCyc, reduction = "umap", split.by = "Phase", label = TRUE,
-        label.size = 6)
-
-# Extract identity and sample info to determine no. of cells per cluster per sample
-n_cells <- FetchData(integClCyc,vars = c("ident")) %>%
-  dplyr::count(ident) %>%
-  tidyr::spread(ident, n)
-
-View(n_cells)
-
-#' DE markers 
-DefaultAssay(integClCyc) <- "RNA"
-integClCyc <- NormalizeData(integClCyc, verbose = FALSE)
-markers <- FindAllMarkers(integClCyc, only.pos = TRUE, min.pct = 0.25, 
-                          logfc.threshold = 0.25)
-
-markers.sortedByPval = markers[order(markers$p_val),]
-
-genes_uniquely_DE = markers.sortedByPval %>% 
-  dplyr::filter(avg_log2FC >= 1) %>% group_by(gene) %>%  
-  summarize(n=n()) %>%  dplyr::filter(n==1)
-
-genes_uniquely_DE.markers.sortedByPval =
-  markers.sortedByPval[markers.sortedByPval$gene %in% genes_uniquely_DE$gene & 
-                         markers.sortedByPval$avg_log2FC >= 1,]
-
-top_marker_each = genes_uniquely_DE.markers.sortedByPval %>% 
-  dplyr::group_by(cluster) %>% do(head(., n=10))
-
-write.table(top_marker_each, file = "data/SeuratOut/output/MtCpClCyc/top10markercluster.txt", sep = "\t",
-            row.names = T, col.names = T)
-
-# 7. Now see what clusters matches the data with and without cell cycle regression
-# Load in the data without cell cycle regression and wihtout mtcp genome
-# load("~/shruti/SNRIII/data/SeuratOut/integWthClCyc.RData")
-# split_seurat <- SplitObject(integClCyc, split.by = "sample")
-# split_seurat <- split_seurat[c("ctrl", "kno")]
-# kcl <- split_seurat[["ctrl"]]
-# kno <- split_seurat[["kno"]]
-# remove(split_seurat, integClCyc)
-# DefaultAssay(kcl) <- "RNA"
-# 55963 x11514
-# DefaultAssay(kno) <- "RNA"
-# 55963 x9052
+# save.image("~/shruti/SNRIII/data/SeuratOut/integWthClCyc.RData")
+Idents(object = integClCyc) <- "integrated_snn_res.0.6"
 
 # Load in the data with mtcp genes
 ctrl1.data <- Read10X_h5("~/shruti/SNR-u2023011/analysis/snrIII/clRngrCntNuclMtCp/kcl2/outs/filtered_feature_bc_matrix.h5")

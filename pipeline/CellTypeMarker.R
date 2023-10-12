@@ -1,50 +1,95 @@
+library(Seurat)
+library(dplyr)
+library(ggplot2)
+library(here)
+
+integ <- readRDS("~/shruti/SNRIII/data/SeuratOut/integ.rds")
+DefaultAssay(integ) <- "RNA"
+
 # In case to plot for one sample, split the object
 split_seurat <- SplitObject(seurat_integrated, split.by = "sample")
 split_seurat <- split_seurat[c("ctrl", "kno")]
 # and plot using the object split_seurat$ctrl
 
+# grep( "^mt-", rownames(seurat.object), value = T)
 #' Plot using different methods
-DefaultAssay(integClCyc) <- "RNA"
+DefaultAssay(integ) <- "RNA"
 
-DotPlot(seurat_integrated, features = , cols = c("blue", "red"), 
-        dot.scale = 8, split.by = "sample") + 
-  RotatedAxis() + ylab("Sample-wise Cluster number") +xlab("Genes")+coord_flip()
+DotPlot(integClCyc, features = tga1, cols = c("#005AB5", "#DC3220"),
+        dot.scale = 8, split.by = "sample") + RotatedAxis() + coord_flip()+ 
+  ylab(NULL) +xlab(NULL)
 
-DotPlot(split_seurat$ctrl, features = bsp, cols ="RdBu") +
+cluster19 <- c("Potra2n19c34419","Potra2n7c15685","Potra2n7c15689","Potra2n9c19910","Potra2n10c21469","Potra2n9c18825","Potra2n11c22484","Potra2n7c15682","Potra2n5c12320","Potra2n2c5371","Potra2n5c12223")
+  
+DotPlot(integ, features = cambium, cols ="RdBu") +
   RotatedAxis()+ ylab("Cluster Number") +xlab("Genes")+coord_flip()
 
-bsp <- c("Potra2n13c25437", "Potra2n13c25438", "Potra2n13c25439", 
-         "Potra2n13c25440", "Potra2n13c25589", "Potra2n158s34776", "Potra2n484s35780")
-# cesA8,xcp2, xcp2b,PIB,NiR, NiA, F5Ha, F5Hb, IRXa,IRXb,MYB103, WEB 
-
-VlnPlot(seurat_integrated, features = phloem)
+DotPlot(integ, features = selectedmarker[selectedmarker$CellType == "cambium", ]$GeneId,
+        cols ="RdBu") + RotatedAxis()+ coord_flip()
 
 # Split Violin 
-plots <- VlnPlot(seurat_integrated, features = "Potra2n15c29002", cols = c("blue", "red"),
-                 split.by = "sample", pt.size = 0, combine = FALSE, split.plot = TRUE)
-wrap_plots(plots = plots, ncol = 1)                                                                                                                                                                    
-# 
-# FeaturePlot(seurat_phase, features = c('Potra2n1c2087'))
-
-# RidgePlot(seurat_phase, features = c('Potra2n1c2087'))
+# plots <- VlnPlot(seurat_integrated, features = "Potra2n15c29002", cols = c("blue", "red"),
+#                  split.by = "sample", pt.size = 0, combine = FALSE, split.plot = TRUE)
+# wrap_plots(plots = plots, ncol = 1)                                                                                                                                                                    
 
 # DoHeatmap(subset(seurat_phase, downsample = 100), features = ces_synthase, size = 3)
 
 # Stacked violin
-a <- VlnPlot(seurat_integrated, features =nrt_han, stack = TRUE, sort = TRUE) +
-  +     theme(legend.position = "none") + ggtitle("Identity on y-axis")
-b <- VlnPlot(seurat_integrated, features=nrt_han, stack = TRUE, sort = TRUE, flip = TRUE) +
-  +     theme(legend.position = "none") + ggtitle("Identity on x-axis")
-plot_grid(a,b)
+# a <- VlnPlot(seurat_integrated, features =nrt_han, stack = TRUE, sort = TRUE) +
+#   +     theme(legend.position = "none") + ggtitle("Identity on y-axis")
+# b <- VlnPlot(seurat_integrated, features=nrt_han, stack = TRUE, sort = TRUE, flip = TRUE) +
+#   +     theme(legend.position = "none") + ggtitle("Identity on x-axis")
+# plot_grid(a,b)
 
 # png("lac_fam.png")
 # for (i in length(lac_fam)) {
-#   print(DotPlot(seurat_phase, features = lac_fam)+RotatedAxis())
-# }
+#   print(DotPlot(seurat_phase, features = lac_fam)+RotatedAxis())}
 # dev.off()
 # 
 #' Find markers based on literature and plot and discuss if they could be good markers for a cell type
 #' 
+#' 5.1 selected marker for figure
+selectedmarker <- read.table("data/SeuratOut/selMarker.txt",sep = '\t',header=TRUE)
+
+phloem <- c("Potra2n10c20892","Potra2n10c21280","Potra2n10c21469","Potra2n10c21994","Potra2n11c22484","Potra2n11c22540","Potra2n11c22649","Potra2n11c22821","Potra2n12c23967","Potra2n12c24479","Potra2n12c24713","Potra2n12c24714","Potra2n13c25317","Potra2n13c26179","Potra2n16c29487","Potra2n17c31828","Potra2n18c33107","Potra2n19c33601","Potra2n19c34419","Potra2n1c1686","Potra2n1c2159","Potra2n1c267","Potra2n1c3642","Potra2n1c700","Potra2n2c4235","Potra2n2c5371","Potra2n2c5643","Potra2n2c5644","Potra2n391s35520","Potra2n3c6746","Potra2n4c9160","Potra2n4c9835","Potra2n5c11135","Potra2n5c12223","Potra2n5c12320","Potra2n6c13736","Potra2n6c14623","Potra2n6c15124","Potra2n7c15682","Potra2n7c15685","Potra2n7c15689","Potra2n81s34525","Potra2n81s34526","Potra2n8c17353","Potra2n8c18612","Potra2n9c18825","Potra2n9c19910","Potra2n4c10378","Potra2n16c30506","Potra2n6c14369","Potra2n11c23289","Potra2n13c25854","Potra2n17c31798","Potra2n18c32257","Potra2n18c32258","Potra2n18c32505","Potra2n18c32506","Potra2n18c32791","Potra2n19c33677","Potra2n19c34194","Potra2n1c1091")
+cambium <- c("Potra2n10c20235","Potra2n10c20736","Potra2n10c20760","Potra2n10c20846","Potra2n10c21451","Potra2n10c21673","Potra2n10c22031","Potra2n11c22555","Potra2n11c22567","Potra2n11c22811","Potra2n11c22828","Potra2n11c23322","Potra2n12c23826","Potra2n12c23983","Potra2n12c24164","Potra2n12c24650","Potra2n12c24764","Potra2n13c24952","Potra2n13c25185","Potra2n13c25262","Potra2n13c25541","Potra2n13c25822","Potra2n13c25852","Potra2n14c26391","Potra2n14c26506","Potra2n14c26580","Potra2n14c27085","Potra2n14c27215","Potra2n14c27365","Potra2n14c27708","Potra2n15c27987","Potra2n15c28802","Potra2n15c28861","Potra2n15c29002","Potra2n16c29899","Potra2n16c30563","Potra2n16c30576","Potra2n17c30987","Potra2n17c31100","Potra2n17c31267","Potra2n18c32073","Potra2n18c32470","Potra2n18c32483","Potra2n18c32702","Potra2n18c33107","Potra2n19c33278","Potra2n19c33517","Potra2n19c33790","Potra2n1c1635","Potra2n1c17","Potra2n1c2087","Potra2n1c2195","Potra2n1c2732","Potra2n1c2900","Potra2n1c3147","Potra2n1c357","Potra2n1c3842","Potra2n1c605","Potra2n1c788","Potra2n1c998","Potra2n2c4070","Potra2n2c4139","Potra2n2c4218","Potra2n2c4898","Potra2n2c5282","Potra2n2c5745","Potra2n2c5977","Potra2n2c6181","Potra2n2c6375","Potra2n2c6439","Potra2n3c6864","Potra2n3c7095","Potra2n3c7265","Potra2n3c7460","Potra2n3c7528","Potra2n4c10039","Potra2n4c8814","Potra2n4c9561","Potra2n4c9798","Potra2n5c10575","Potra2n5c10753","Potra2n5c10979","Potra2n5c11241","Potra2n5c11446","Potra2n5c11602","Potra2n5c11916","Potra2n5c11923","Potra2n5c12554","Potra2n6c12962","Potra2n6c13323","Potra2n6c13849","Potra2n6c14336","Potra2n6c14711","Potra2n6c15109","Potra2n7c15470","Potra2n7c15818","Potra2n7c15935","Potra2n7c16113","Potra2n7c16264","Potra2n7c16566","Potra2n8c16773","Potra2n8c17318","Potra2n8c17825","Potra2n8c17900","Potra2n8c18011","Potra2n8c18019","Potra2n9c19378","Potra2n9c19384","Potra2n9c19454","Potra2n9c19718","Potra2n9c19735", "Potra2n6c14967","Potra2n9c19651","Potra2n1c2250","Potra2n6c13361","Potra2n6c15120")
+ray5_7 <- c("Potra2n10c20444","Potra2n11c22600","Potra2n14c27801","Potra2n14c27834","Potra2n15c28669","Potra2n16c30308","Potra2n18c33011","Potra2n1c3480","Potra2n2c4118","Potra2n2c4509","Potra2n3c6926","Potra2n3c6944","Potra2n3c8005","Potra2n4c8449","Potra2n5c11003","Potra2n6c13067","Potra2n6c15285","Potra2n7c16335","Potra2n9c19477","Potra2n13c25349","Potra2n14c27607","Potra2n16c29243","Potra2n16c30464","Potra2n18c32429","Potra2n18c32564","Potra2n1c1049","Potra2n1c2010","Potra2n1c232","Potra2n1c90","Potra2n2c4144","Potra2n2c4942","Potra2n2c5467","Potra2n2c6010","Potra2n3c8020","Potra2n4c10139","Potra2n4c9969")
+ray2<- c("Potra2n13c25215","Potra2n18c32373","Potra2n1c394","Potra2n2c4494","Potra2n2c5697","Potra2n2c5875","Potra2n4c9970","Potra2n5c10874","Potra2n5c11107","Potra2n5c11849","Potra2n8c17115","Potra2n9c18880")
+xpc_ray <- c("Potra2n15c28663","Potra2n16c29896","Potra2n1c3834","Potra2n1c749","Potra2n4c9930","Potra2n6c13057","Potra2n6c13538","Potra2n6c15220","Potra2n14c26690","Potra2n14c26986","Potra2n14c27082","Potra2n14c27101","Potra2n16c30018","Potra2n16c30450","Potra2n17c30920","Potra2n18c32844","Potra2n1c1897","Potra2n1c2429","Potra2n1c394","Potra2n2c4928","Potra2n3c6993","Potra2n4c9205","Potra2n5c11091","Potra2n5c11250","Potra2n5c11849","Potra2n6c14448","Potra2n8c17012","Potra2n8c17375","Potra2n9c18721")
+fiber <- c("Potra2n11c22673","Potra2n11c23199","Potra2n15c28689","Potra2n16c30073","Potra2n16c30273","Potra2n1c546","Potra2n2c4078","Potra2n4c9297","Potra2n6c14160","Potra2n7c15752","Potra2n7c16228","Potra2n19c33344","Potra2n10c20411","Potra2n5c11573","Potra2n13c24959","Potra2n5c11765","Potra2n7c16495","Potra2n1c3619","Potra2n7c16234","Potra2n5c11571","Potra2n3c7305","Potra2n4c8952","Potra2n5c12319","Potra2n12c24762","Potra2n15c28411","Potra2n1c307","Potra2n1c953","Potra2n2c6235","Potra2n16c30051","Potra2n9c19651","Potra2n1c4016","Potra2n11c22498","Potra2n6c14201","Potra2n8c16778","Potra2n8c16946","Potra2n8c17885","Potra2n9c20072")
+celldeath <- c("Potra2n14c26495","Potra2n14c27047","Potra2n1c3263","Potra2n5c11905", "Potra2n4c10301","Potra2n6c15163","Potra2n16c29448","Potra2n10c21346","Potra2n1c3148","Potra2n11c23290","Potra2n1c2692")
+
+generateDotPlot <- function(data, markerfile, cellType) {
+  markers <- markerfile[markerfile$CellType == cellType, ]$GeneId
+  
+  # png(file.path(here("data/SeuratOut/plots/withClCyc/"),
+  png(file.path(here("data/SeuratOut/plots/mtCp/"),
+                paste0(cellType,".png")), res= 250,height = 4000, width = 3000)
+  
+  p <- DotPlot(data, features = markers, cols ="RdBu") +
+    RotatedAxis()+  ylab(NULL) +xlab(NULL)+coord_flip() +
+    labs(title = cellType)
+  
+  print(p)
+  dev.off()
+}
+
+unique(selectedmarker$CellType)
+# "aspwood" "chen photosyn" "etc" "wilcox" "gus" "S" "fiber" "cambium" "ray"
+# [11] "lignin" "du cell exp" "chen lit" "du dna rep cell cyc" "conde" "M"
+# [17] "chen fv" "du sec wall" "laccase" "cluster 6" "peroxidase" "du phloem diff"
+# [23] "phloem" "G2" "Tung7" "vessel" "du meristem identity" "du aux"
+# "gutirrez" "cluster 14" "xylan" "g10" "pectin" "cluster 5" "cluster 18" "chen ce"
+# [37] "cluster 11" "fiber late" "erf" "chen sieve" "chen companion" "chen cork"            
+# [43] "cluster 20" "ligx" "cluster 7" "cellulose" "chen cambium" "Tung2"     
+# [49] "kucukoglu" "du xylem diff" "cluster 9" "Tung8" "cluster 8" "Tung6"                
+# [55] "chen ce" "Tung1" "chen phloem mother" "Tung5" "cluster 2" "chen xylem mother"    
+# [61] "cluster 16" "not exp" "seyfferth" "chen e" "Tung4" "Tung3" "chen xylem parenchyma"
+
+ploidyGn <- read.table("data/SeuratOut/ploidy.txt",sep = '\t',header=TRUE)
+DotPlot(integ, features = ploidyGn[ploidyGn$Ploidy == "2C", ]$GeneId,
+        cols ="RdBu") + RotatedAxis()+ coord_flip()
+
 #' 5.2. From network gene aspwood paper
 #' 
 central <- c ("Potra2n1c2906","Potra2n18c32336","Potra2n1432s37069","Potra2n3c7321","Potra2n7c15994","Potra2n19c33300","Potra2n17c31191","Potra2n12c24213","Potra2n16c29788","Potra2n5c10698","Potra2n2c5399","Potra2n14c27719","Potra2n15c28587","Potra2n17c31821","Potra2n11c23297","Potra2n1c3328","Potra2n6c14033","Potra2n13c25391","Potra2n1c728","Potra2n10c20606","Potra2n1c527","Potra200449g30244","Potra2n2c4161","Potra2n280s35192","Potra2n10c21633","Potra2n1c1848","Potra2n12c24727","Potra2n11c22658","Potra2n4c9314","Potra2n1c3595","Potra2n7c15504","Potra2n12c24194","Potra2n18c32866","Potra2n1c957","Potra2n2c5746","Potra2n2c4854","Potra2n13c25179","Potra2n16c30537","Potra2n5c11302","Potra2n19c34443","Potra2n16c29890")
@@ -61,6 +106,7 @@ ces <- c("Potra2n2c4078","Potra2n6c13749", "Potra2n18c32336", "Potra2n11c23199",
 
 #' Phloem: shouldn't exist in present dataset
 phloem <- c("Potra2n17c30730","Potra2n12c24024","Potra2n15c28954","Potra2n4c9149", "Potra2n8c17353","Potra2n10c20892","Potra2n17c30726","Potra2n4c9146","Potra2n10c20934","Potra2n8c17387","Potra2n1c1172","Potra2n17c30744","Potra2n4c9160","Potra2n8c18492")
+bsp <- c("Potra2n13c25437", "Potra2n13c25438", "Potra2n13c25439", "Potra2n13c25440", "Potra2n13c25589", "Potra2n158s34776", "Potra2n484s35780")
 
 #' Cambium/phloem: PtOPS-A, PtOPS-B, PtBRX-A, PtBRX-B, CLE41, MYB83/PtMYB20/21
 camb_or_phloem <- c("Potra2n6c14490","Potra2n16c30270","Potra2n1c1136","Potra2n3c7606","Potra2n2c4235","Potra2n9c19455")
@@ -318,14 +364,7 @@ UpregGFPos100 <- c("Potra2n16c29960","Potra2n7c16394","Potra2n2c4401","Potra2n10
 
 zde <- c("Potra2n1c307","Potra2n3c6817","Potra2n1c1541","Potra2n1c2300","Potra2n1c2649","Potra2n1c3219","Potra2n1c3619","Potra2n1c3797","Potra2n1c3894","Potra2n2c6165","Potra2n571s36008","Potra2n2c5445","Potra2n2c5386","Potra2n2c5282","Potra2n2c5206","Potra2n2c4785","Potra2n2c4078","Potra2n3c7945","Potra2n3c7864","Potra2n3c7514","Potra2n1c546","Potra2n3c6847","Potra2n3c6817","Potra2n3c6783","Potra2n4c8952","Potra2n4c9274","Potra2n4c9673","Potra2n4c9854","Potra2n4c10104","Potra2n4c10254","Potra2n4c10264","Potra2n5c12591","Potra2n5c12319","Potra2n5c12296","Potra2n5c12259","Potra2n5c12058","Potra2n5c11765","Potra2n5c11670","Potra2n5c11659","Potra2n5c11571","Potra2n571s36008","Potra2n6c15127","Potra2n6c14938","Potra2n6c14298","Potra2n6c14201","Potra2n6c14160","Potra2n6c13965","Potra2n6c13749","Potra2n6c13284","Potra2n6c13189","Potra2n6c13086","Potra2n7c16495","Potra2n5c11670","Potra2n7c16228","Potra2n7c15965","Potra2n5c12296","Potra2n7c15752","Potra2n10c20318","Potra2n8c16946","Potra2n8c17280","Potra2n8c17885","Potra2n9c20060","Potra2n9c19954","Potra2n9c19763","Potra2n9c19448","Potra2n9c19275","Potra2n9c19246","Potra2n9c18811","Potra2n4c10254","Potra2n10c20806","Potra2n8c16946","Potra2n8c16946","Potra2n10c20318","Potra2n11c23573","Potra2n11c23287","Potra2n11c23199","Potra2n11c22673","Potra2n11c22498","Potra2n12c23766","Potra2n12c24223","Potra2n443s35696","Potra2n12c24640","Potra2n12c24640","Potra2n12c24903","Potra2n13c26130","Potra2n13c24959","Potra2n14c26500","Potra2n14c26506","Potra2n14c26547","Potra2n14c26628","Potra2n15c28915","Potra2n15c28784","Potra2n15c28467","Potra2n15c28466","Potra2n12c24640","Potra2n16c29730","Potra2n16c30051","Potra2n16c30091","Potra2n16c30273","Potra2n17c31788","Potra2n17c31715","Potra2n18c32995","Potra2n18c32432","Potra2n18c32336","Potra2n19c34336","Potra2n158s34763","Potra2n13c25019","Potra2n13c24959")
 
-# 5.7 N signaling AT
-nitrateInducible <- c("Potra2n18c32131","Potra2n6c14829","Potra2n1c2483",	"Potra2n2c4462",
-                      "Potra2n7c16165","Potra2n5c11527","Potra2n9c19330")
-                      # "Potra2n10c21333", "Potra2n12c24188", "Potra2n14c26447", "Potra2n17c30923",
-                      # "Potra2n2c5325", "Potra2n4c9349","Potra2n8c17736")
-lgo <- c("Potra2n10c20340","Potra2n8c16875","Potra2n10c20339","Potra2n9c20082")
-
-# 5.8 Validation
+# 5.7 Validation
 issa <- c("Potra2n4c8952","Potra2n5c10536","Potra2n2c6410","Potra2n14c27598", "Potra2n4c9696", "Potra2n2c5606", "Potra2n7c16495", "Potra2n5c11765", "Potra2n7c16234", "Potra2n5c11573", "Potra2n3c7305", "Potra2n2c6235")
 
 # 5.9 snRNA Seq vegetative shoot apex from Conde et al., 2022
