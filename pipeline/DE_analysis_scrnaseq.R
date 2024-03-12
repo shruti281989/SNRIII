@@ -37,7 +37,7 @@ suppressPackageStartupMessages({
   library(limma)
 })
 
-load("~/shruti/SNRIII/data/SeuratOut/integafterdbltremoval.RData")
+seurat_integrated  <- readRDS("~/shruti/SNRIII/data/SeuratOut/integ.rds")
 setwd("~/shruti/SNRIII/data/SeuratOut/output/afterDbltRemoval/pseudobulkDEClustWiseAftrDblt/")
 
 # Extract raw counts and metadata to create SingleCellExperiment object
@@ -45,7 +45,9 @@ counts <- GetAssayData(object = seurat_integrated, slot = "counts", assay="RNA")
 metadata <- seurat_integrated@meta.data
 
 # Set up metadata as desired for aggregation and DE analysis
-Idents(object = seurat_integrated) <- "integrated_snn_res.0.6"
+Idents(object = seurat_integrated) <- "integrated_snn_res.0.6" 
+#check it should be integ$integrated_snn_res.0.6
+
 metadata$cluster_id <- factor(seurat_integrated@active.ident)
 
 # Create single cell experiment object
@@ -152,7 +154,7 @@ for(cluster in 1:length(keepClusters)){
   # 
   # Sig genes
   # filePath <- paste0("data/SeuratOut/output/afterDbltRemoval/pseudobulkDEClustWiseAftrDblt/clustWiseSigDE/Cluster", keepClusters[cluster])
-  filePath <- paste0("data/SeuratOut/output/afterDbltRemoval/mtCp/Cluster", keepClusters[cluster])
+  filePath <- paste0("data/SeuratOut/output/afterDbltRemoval/", keepClusters[cluster])
   out <- res_fil[[cluster]][,c("gene", "logFC", "logCPM", "p_adj")]
   write.csv(out, file = paste0(filePath, "_", "ctrlkno.csv"), quote=F, row.names = F)
   

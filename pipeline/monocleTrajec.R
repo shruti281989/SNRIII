@@ -24,14 +24,13 @@ integ <- readRDS("~/shruti/SNRIII/data/SeuratOut/integ.rds")
 
 # Part A. trial with only control
 split_seurat <- SplitObject(integ, split.by = "sample")
-kcl0 <- split_seurat[["kclmtcp"]]
+# kcl0 <- split_seurat[["kclmtcp"]]
 kcl0 <- split_seurat[["ctrl"]]
 DefaultAssay(kcl0) <- "SCT"
 DimPlot(kcl0, reduction = "umap", pt.size = 0.01, label = TRUE)
 
 # Take few clusters of the known identities
-# kcl1 <- subset (kcl0, 
-                # subset= integrated_snn_res.0.6==c("16","5","14","18","13","15","2","17","4"))
+kcl1 <- subset (kcl0, subset= integrated_snn_res.0.6==c("16","5","14","18","13","15","2","17","4"))
 
 DimPlot(kcl0, reduction = "umap", pt.size = 0.01, label = TRUE)
 cds <- as.cell_data_set(kcl1)
@@ -109,7 +108,7 @@ integ1 = subset(integ, cells = integ1)
 # PART C. trial with integrated object where:
 # cell cycle regressed out and no mtcp genes
 integ <- readRDS("~/shruti/SNRIII/data/SeuratOut/integ.rds")
-Idents(integ) <- "integrated_snn_res.0.6"
+Idents(integ) <- integ$integrated_snn_res.0.6
 DefaultAssay(integ) <- "RNA"
 DimPlot(integ, reduction = "umap", pt.size = 0.01, label = TRUE) # split.by = "sample"
 integ$seurat_clusters <- integ@active.ident
@@ -117,7 +116,7 @@ integ$seurat_clusters <- integ@active.ident
 # Take few clusters of the known identities
 
 # fiber and vessel
-# integ1 <- WhichCells(integ, ident= c("1","10","6","14","17", "4","15"))
+integ1 <- WhichCells(integ, ident= c("1","10","6","14","17", "4","15"))
 
 # fib
 # integ1 <- WhichCells(integ, ident= c("1","10","4","20","12","15","8"))
@@ -142,16 +141,17 @@ integ$seurat_clusters <- integ@active.ident
 # integ1 <- WhichCells(integ, ident= c("1","4","15","17","14","10","12","6","20"))
 
 # all- 16 as root
-# integ1 <- WhichCells(integ, ident= c("1","4","15","17","14","10","12","6","20","18","19","5","7","8","16"))
+integ1 <- WhichCells(integ, ident= c("1","4","15","17","14","10","12","6","20","18","19","5","7","8","16"))
 
 # fib only
 # integ1 <- WhichCells(integ, ident= c("1","4","15","14"))
 
 # fibVes4- 16 as root
-integ1 <- WhichCells(integ, ident= c("1","4","15","17","14","10","12","6","20","8","16"))
+# integ1 <- WhichCells(integ, ident= c("1","4","15","17","14","10","12","6","20","8","16"))
 
-integ1 <- WhichCells(integ, ident= c("17","14","6","16"))
-integ1 = subset(integ, cells = integ1)
+# integ1 <- WhichCells(integ, ident= c("17","14","6","16"))
+
+# integ1 = subset(integ, cells = integ1)
 cds <- as.cell_data_set(integ1)
 # integ1$ident <- integ1@active.ident
 

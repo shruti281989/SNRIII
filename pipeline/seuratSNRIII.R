@@ -64,15 +64,18 @@ suppressPackageStartupMessages({
   library(scales)
   library(ggplot2)
   library(here)
-  library(data.table)
+  library(viridis)
+  library(scCustomize)
+  library(qs)
+  
 })
 
 #' 1. Load cellranger output (.h5 matrix) for control (kcl) and treated (kno3)
 # setwd("/mnt/picea/home/schoudhary/shruti/SNRIII/data/SeuratOut/")
-ctrl1.data <- Read10X_h5("/mnt/picea/home/schoudhary/shruti/SNRIII/data/CellRangerCount/kcl/outs/filtered_feature_bc_matrix.h5")
+ctrl1.data <- Read10X_h5("~/shruti/SNR-u2023011/analysis/snrIII/clRngrCntNucl/kcl2/outs/filtered_feature_bc_matrix.h5")
 # 20539 x 37184
 
-kno1.data <- Read10X_h5("/mnt/picea/home/schoudhary/shruti/SNRIII/data/CellRangerCount/kno/P27752_1002/outs/filtered_feature_bc_matrix.h5")
+kno1.data <- Read10X_h5("~/shruti/SNR-u2023011/analysis/snrIII/clRngrCntNucl/kno2/outs/filtered_feature_bc_matrix.h5")
 # 14217 x 37184 
 
 #' If you want to process the data from the previous runs as well (SNRII) and general LT
@@ -575,7 +578,7 @@ markers <- FindAllMarkers(object = seurat_integrated,
                           only.pos = TRUE, min.pct = 0.25, 
                           logfc.threshold = 0.25)
 
-# Save markers as markersWilcox.RData
+# Save markers as ~/shruti/SNR-u2023011/analysis/snrIII/dnStrm/markerWilcox.rds
 
 # 5.1. Goto enrichment.R for enrichment of markers clusterwise
 
@@ -618,15 +621,38 @@ conserved_markers <- map_dfr(c(0:20), get_conserved)
 write.table(conserved_markers, file = "output/afterDbltRemoval/cons_marker.txt", sep = "\t",
             row.names = T, col.names = T)
 
-# 6. decided not to regress cell cycle and find the markers
-seurat_integrated <- readRDS("data/SeuratOut/integ.rds")
+# 6. decided not to regress cell cycle and remove some clusters
+seurat_integrated <- readRDS("~/shruti/SNRIII/data/SeuratOut/integ.rds")
+
 DefaultAssay(seurat_integrated) <- "RNA"
-# seurat_integrated <- subset(seurat_integrated, integrated_snn_res.0.6 == '2', invert=T)
-# seurat_integrated$oldclusters <- seurat_integrated$integrated_snn_res.0.6
-# seurat_integrated$seurat_clusters <- seurat_integrated@active.ident
-# seurat_integrated$orig.ident <- paste0("integ_",seurat_integrated$seurat_clusters)
-# seurat_integrated$orig.samp <- "integ"
-  
+seurat_integrated <- subset(seurat_integrated, integrated_snn_res.0.6 == '2', invert=T)
+seurat_integrated <- subset(seurat_integrated, integrated_snn_res.0.6 == '9', invert=T)
+seurat_integrated <- subset(seurat_integrated, integrated_snn_res.0.6 == '0', invert=T)
+
+# Remove useless metadata for example, integration at various resolutions, 
+# log10GenesperUMI,nUMI,nGene, 
+seurat_integrated$nUMI <- NULL
+seurat_integrated$nGene <- NULL
+seurat_integrated$log10GenesPerUMI <- NULL
+seurat_integrated$RNA_snn_res.0.1 <- NULL
+seurat_integrated$seurat_clusters <- NULL
+seurat_integrated$pANN_0.25_0.26_4046 <- NULL
+seurat_integrated$pANN_0.25_0.3_3879 <- NULL
+seurat_integrated$doublet_finder <- NULL
+seurat_integrated$S.Score <- NULL
+seurat_integrated$G2M.Score <- NULL
+seurat_integrated$integrated_snn_res.0.4 <- NULL
+seurat_integrated$integrated_snn_res.0.8 <- NULL
+seurat_integrated$integrated_snn_res.1.4 <- NULL
+seurat_integrated$integrated_snn_res.1 <- NULL
+seurat_integrated$Phase <- NULL
+
+# Keep the old clusters
+seurat_integrated$oldclusters <- seurat_integrated$integrated_snn_res.0.6
+seurat_integrated$seurat_clusters <- seurat_integrated@active.ident
+seurat_integrated$orig.ident <- paste0("integ_",seurat_integrated$seurat_clusters)
+seurat_integrated$orig.samp <- "integ"
+
 split_seurat <- SplitObject(seurat_integrated, split.by = "sample")
 split_seurat <- split_seurat[c("ctrl", "kno")]
 
@@ -653,23 +679,19 @@ integ_anchors <- FindIntegrationAnchors(object.list = split_seurat,
                                         anchor.features = integ_features)
 
 integClCyc <- IntegrateData(anchorset = integ_anchors, 
-                                   normalization.method = "SCT")
+                            normalization.method = "SCT")
+
 # Remove unwanted objects
-rm(split_seurat, i, integ_anchors, integ_features)
+rm(split_seurat, i, integ_anchors, integ_features, seurat_integrated)
+gc()
 
 DefaultAssay(integClCyc) <- "integrated"
 integClCyc <- ScaleData(integClCyc, verbose = FALSE)
-integClCyc <- RunPCA(integClCyc)
+integClCyc <- RunPCA(integClCyc, npcs = 50)
 integClCyc <- RunUMAP(integClCyc, dims = 1:50, reduction = "pca") #40
-ElbowPlot(object = integClCyc, ndims = 40)
+# ElbowPlot(object = integClCyc, ndims = 40)
 integClCyc <- FindNeighbors(integClCyc, dims = 1:50)
-integClCyc <- FindClusters(integClCyc, resolution = c(0.1, 0.3, 0.4, 0.5, 0.6, 0.8))
-DimPlot(integClCyc, label=T)
-
-Idents(object = integClCyc) <- "integrated_snn_res.0.6"
-integClCyc <- RunUMAP(integClCyc, dims = 1:30, reduction = "pca", seed.use = 5) #40
-integClCyc <- FindNeighbors(integClCyc, dims = 1:30)
-integClCyc <- FindClusters(integClCyc, resolution = c(0.1, 0.6), random.seed = 689213)
+integClCyc <- FindClusters(integClCyc, resolution = c(0.3, 0.4, 0.5, 0.6))
 DimPlot(integClCyc, label=T)
 
 # save.image("~/shruti/SNRIII/data/SeuratOut/integWthClCyc.RData")
@@ -706,11 +728,17 @@ merged_seurat <- merge(cdata1, y = tdata1,
 #' and without cell cycle
 
 #' 7. Rename clusters 
-# seurat_labelled <- RenameIdents(object = split_seurat$ctrl,
-#                                 "4" = "Fibers1", "5" = "Rays1", 
-#                                 "7" = "Rays2", "12" = "Fibers2", 
-#                                 "15" = "Fibers3", "17" = "Vessels",
-#                                 "19" = "Phloem", "20" = "Cambium")
+seurat_labelled <- RenameIdents(object = integ,
+                                "0" = "Unknown 0","1" = "Fiber Precursor 1",
+                                "2" = "Unknown 2","3" = "Unknown 3",
+                                "4" = "Early Fiber", "5" = "Ray 5",
+                                "6" = "Early Vessel","7" = "Ray 7",
+                                "8" = "Unknown 8", "9" = "Unknown 9",
+                                "10" = "Fiber Precursor 2","11" = "Vessel",
+                                "12" = "Later Fiber 2","13" = "Unkown 13",
+                                "14" = "Fusiform Initial", "15" = "Fiber 1",
+                                "16" = "Ray/Fusiform Initial","17" = "Late Vessel",
+                                "18" = "Ray 18","19" = "Phloem like","20" = "Cambium")
 # # 
 # seurat_labelled$celltype.sample <- paste(Idents(seurat_labelled), seurat_labelled$sample,
 #                                       sep = "_")
@@ -723,3 +751,16 @@ merged_seurat <- merge(cdata1, y = tdata1,
 #' 
 #' 10. See enrichment.R for enrichment
 # 
+
+# If you want to regress the protoplasting 
+DefaultAssay(integ) <- "RNA"
+pp_genes <- readLines("~/shruti/SNR-u2023011/analysis/markers/pplast.txt")
+# Identify genes that are present in the Seurat object
+matching_pp_genes <- pp_genes %in% rownames(integ@assays$RNA@counts)
+# Subset the Seurat object to include only matching genes
+seurat_matching_pp_genes <- subset(integ, features = pp_genes[matching_pp_genes])
+# Calculate the percentage of matching genes in each cell
+percentage_matching_pp_genes <- Matrix::colMeans(
+  seurat_matching_pp_genes@assays$RNA@counts) * 100
+# Create a new feature in the Seurat object to store the percentage information
+integ$percentage_pplast <- percentage_matching_pp_genes

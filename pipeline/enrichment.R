@@ -21,19 +21,24 @@ suppressPackageStartupMessages({
   library(scales)
   library(ggplot2)
   library(here)
+  library(RColorBrewer)
 })
 
 #' Load markers from step 5
-load ("output/afterDbltRemoval/markersWilcox.RData")
+markers <- read_rds("~/shruti/SNR-u2023011/analysis/snrIII/dnStrm/markerWilcox.rds")
 
+# gopher is down, use TopGO instead
 suppressMessages({
-  # source(here("UPSCb-common/Rtoolbox/src/plotEnrichedTreemap.R"))
-  # source(here("UPSCb-common/src/R/featureSelection.R"))
-  # source(here("UPSCb-common/src/R/volcanoPlot.R"))
+  source(here("UPSCb-common/Rtoolbox/src/plotEnrichedTreemap.R"))
+  source(here("UPSCb-common/src/R/featureSelection.R"))
+  source(here("UPSCb-common/src/R/volcanoPlot.R"))
   source(here("UPSCb-common/src/R/gopher.R"))
+  source(here("UPSCb-common/src/R/topGoUtilities.R"))
 })
 
-DefaultAssay(seurat_integrated) <- "RNA"
+integ <- read_rds("~/shruti/SNR-u2023011/analysis/snrIII/integNucl.rds")
+DefaultAssay(integ) <- "RNA"
+integ <- subset(integ, subset = sample =="ctrl")
 
 #' * Graphics
 pal=brewer.pal(8,"Dark2")
@@ -57,16 +62,16 @@ gene.ls <- list(deg.ls)
 # 2. your data is to sparse for 1. to work then use the set of genes expressed 
 # in your tissue type (wood) from a bulk RNA resource
 
-filt_counts <- GetAssayData(object = seurat_integrated, slot = "counts")
+filt_counts <- GetAssayData(object = integ, slot = "counts")
 nonzero <- filt_counts > 0
 
 #' Sums all TRUE values and returns TRUE if more than 3 TRUE values per gene
 keep_genes3 <- Matrix::rowSums(nonzero) >= 3
 
 filt_seurat <- CreateSeuratObject(filt_counts,
-                                      meta.data = seurat_integrated@meta.data)
+                                      meta.data = integ@meta.data)
 
-bg <- list(rownames(seurat_integrated))
+bg <- list(rownames(filt_seurat))
 #' When I use rownames(filtered_seurat), the enrichment doesn't work
 #' 
 enr.list <- lapply(gene.ls,function(r){

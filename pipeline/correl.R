@@ -20,11 +20,11 @@ options(bitmapType = "cairo")
 integ<- readRDS("~/shruti/SNRIII/data/SeuratOut/integ.rds")
 split_seurat <- SplitObject(integ, split.by = "sample")
 kcl0 <- split_seurat[["ctrl"]]
-rm(split_seurat)
+rm(split_seurat, integ)
 
 # With mtcp genome and with cell cycle
 integ8 <- readRDS("~/shruti/SNR-u2023011/analysis/snrIII/clRngrCntNuclMtCp/mtCp/integ8.rds")
-Idents(integ8) <- "integrated_snn_res.0.6"
+Idents(integ8) <- integ8$integrated_snn_res.0.6
 
 # decided to remove cluster 1 from kcl
 integ8 <- subset(integ8, subset = seurat_clusters == '1', invert=T)
@@ -345,10 +345,22 @@ duSTmainPotra$gene <- NULL
 
 duSTsub<- read.csv("~/shruti/SNR-u2023011/analysis/publisheddatasets/Du_sub_rnamean.csv", header = TRUE)
 duSTsub <- subset(duSTsub, select = -c(geneID,description))
+
 duSTsub$Potri <- sub(".v4.1","",duSTsub$gene)
 duSTsubPotra <- inner_join(duSTsub,potrapotri)
 duSTsubPotra$Potri <- NULL
 duSTsubPotra$gene <- NULL
+# C1.0"  "C1.1"  "C1.2"  "C1.3"  "C1.4"  "C1.5"  "C11.0", "C11.1" "C14.0" "C14.1"
+# "C1.0 Procambium-a", "C1.1 Primary Xylem", "C1.2 Primary Phloem-a", "C1.3 Procambium-b",
+# "C1.4 Metacambium", "C1.5 Primary Phloem-b", "C11.0 Cambium Zone", "C11.1 Differentiating Xylem"
+# "C14.0 Procamium-like", "C14.1 Differentiating Phloem" 
+
+colnames(duSTsubPotra) <- c("C1.0 Procambium apex", "C1.1 Primary Xylem apex", 
+                       "C1.2 Primary Phloem apex", "C1.3 Procambium-b",
+                       "C1.4 Metacambium", "C1.5 Primary Phloem-b",
+                       "C11.0 Cambium Zone", "C11.1 Differentiating Xylem",
+                       "C14.0 Procamium-like", "C14.1 Differentiating Phloem",
+                       "Potra")
 
 #Shi's bulk LCM dataset
 shilcm <- read.table("~/shruti/SNR-u2023011/analysis/publisheddatasets/Tung/GSE81077_Tissue_LCM_rawcount.txt", header = TRUE)
@@ -372,8 +384,8 @@ shidrop <- subset(shilcmnormPotra, select = -grep("Three*", colnames(shilcmnormP
 shidrop <- subset(shidrop, select = -grep("Leaf*", colnames(shidrop)))
 shidrop <- subset(shidrop, select = -grep("Shoot*", colnames(shidrop)))
 shidrop <- subset(shidrop, select = -grep("Root*", colnames(shidrop)))
-duSTsubpick <- subset(duSTsubPotra, select = c(4,5,6,7,8,9,10,11))
-duSTmainpick <- subset(duSTmainPotra, select = c(2,7,8,9,12,13,14,15,16,18))
+duSTsubpick <- subset(duSTsubPotra, select = c(4:11))
+duSTmainpick <- subset(duSTmainPotra, select = c(8,9,10,12,13,14,15,16,18))
 
 #Join tables and correlation
 pseudobulk <- as.data.frame(kcl0bulkscale$RNA)
@@ -398,37 +410,19 @@ pheatmap(pcorsubset,
          cluster_cols = FALSE,
          display_numbers = round(pcorsubset, digits = 2))
 
-#Set min clolor range at 0.3
+#Set min clolor range at 0.3/ 0.2
 mat_breaks <- seq(0.3, max(pcorsubset), length.out = 100)
 # mat_breaks <- seq(0.2, max(pcorsubset), length.out = 100)
 
 pheatmap(pcorsubset, 
-         fontsize = 7,
+         fontsize = 16,
          cluster_rows = FALSE,
-         cluster_cols = FALSE,
+         # cluster_cols = FALSE,
          #display_numbers = round(pcorsubset, digits = 2),
-         color = inferno(100),
-         border_color = NA,
-         breaks = mat_breaks,
-         gaps_row = c(28,37))
-
-#add gap, add col clustering
-pheatmap(pcorsubset, 
-         fontsize = 7,
-         cluster_rows = FALSE,
-         #cluster_cols = FALSE,
-         #display_numbers = round(pcorsubset, digits = 2),
+         # color = inferno(100), 
          color = magma(100),
-         border_color = NA,
-         # breaks = mat_breaks,
-         gaps_row = c(28,37))
-
-pheatmap(pcorsubset, 
-         fontsize = 7,
-         cluster_rows = FALSE,
-         #cluster_cols = FALSE,
-         #display_numbers = round(pcorsubset, digits = 2),
-         color = mako(100),
+         # color = viridis(100), 
+         # color = mako(100),
          border_color = NA,
          breaks = mat_breaks,
-         gaps_row = c(28,37))
+         gaps_row = c(28,37, 49))
