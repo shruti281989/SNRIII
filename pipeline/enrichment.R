@@ -25,7 +25,34 @@ suppressPackageStartupMessages({
 })
 
 #' Load markers from step 5
-markers <- read_rds("~/shruti/SNR-u2023011/analysis/snrIII/dnStrm/markerWilcox.rds")
+# markers <- readRDS("~/shruti/SNR-u2023011/analysis/snrIII/dnStrm/markerWilcox.rds")
+
+integ <- readRDS("~/shruti/SNR-u2023011/analysis/snrIII/integNucl.rds")
+DefaultAssay(integ) <- "RNA"
+
+split_seurat <- SplitObject(integ, split.by = "sample")
+split_seurat <- split_seurat[c("ctrl", "kno")]
+ctrl <- split_seurat$ctrl
+DefaultAssay(ctrl) <- "RNA"
+
+ctrl <- NormalizeData(ctrl, verbose = FALSE)
+
+# subset to 300 cells 
+sub <- subset(ctrl, cells = WhichCells(integ, downsample = 200))
+table(sub@active.ident)
+# 0   1   2   3   4   5   6   7   8   9  10  11  12  13  14  15  16 
+# 300 300 300 300 300 300 300 300 300 300 287 261 289 159 206 241 226 
+# 17  18  19  20 
+# 191 119  87  24
+
+# Compute differentiall expression
+markers_genes_sub <- FindAllMarkers(
+  sub, logfc.threshold = -Inf, test.use = "wilcox", min.pct = 0.05,
+  min.diff.pct = 0, only.pos = TRUE, max.cells.per.ident = 20, assay = "RNA")
+
+saveRDS(markers_genes_sub, file = "../SNR-u2023011/analysis/markers/crl_sub.rds")
+gene_rank <- setNames(crl_sub$avg_log2FC, 
+                      casefold(rownames(crl_sub), upper = T))
 
 # gopher is down, use TopGO instead
 suppressMessages({
@@ -36,16 +63,12 @@ suppressMessages({
   source(here("UPSCb-common/src/R/topGoUtilities.R"))
 })
 
-integ <- read_rds("~/shruti/SNR-u2023011/analysis/snrIII/integNucl.rds")
-DefaultAssay(integ) <- "RNA"
-integ <- subset(integ, subset = sample =="ctrl")
-
 #' * Graphics
 pal=brewer.pal(8,"Dark2")
 hpal <- colorRampPalette(c("blue","white","red"))(100)
 mar <- par("mar")
 
-deg.ls <- split(rownames(markers), f = markers$cluster)
+deg.ls <- split(rownames(crl_sub), f = crl_sub$cluster)
 # deg.ls is a list, still need to make a list for enrichment
 gene.ls <- list(deg.ls)
 
@@ -62,22 +85,31 @@ gene.ls <- list(deg.ls)
 # 2. your data is to sparse for 1. to work then use the set of genes expressed 
 # in your tissue type (wood) from a bulk RNA resource
 
-filt_counts <- GetAssayData(object = integ, slot = "counts")
-nonzero <- filt_counts > 0
-
-#' Sums all TRUE values and returns TRUE if more than 3 TRUE values per gene
-keep_genes3 <- Matrix::rowSums(nonzero) >= 3
-
-filt_seurat <- CreateSeuratObject(filt_counts,
-                                      meta.data = integ@meta.data)
-
-bg <- list(rownames(filt_seurat))
-#' When I use rownames(filtered_seurat), the enrichment doesn't work
+# filt_counts <- GetAssayData(object = integ, slot = "counts")
+#' nonzero <- filt_counts > 0
 #' 
-enr.list <- lapply(gene.ls,function(r){
-  lapply(r,gopher,task=list("go","kegg","pfam"),background = bg,
-         url="potra2")
-})
+#' #' Sums all TRUE values and returns TRUE if more than 3 TRUE values per gene
+#' keep_genes3 <- Matrix::rowSums(nonzero) >= 3
+#' 
+#' filt_seurat <- CreateSeuratObject(filt_counts,
+#'                                       meta.data = integ@meta.data)
+
+bg <- list(rownames(integ))
+#' When I use rownames(filtered_seurat), the enrichment doesn't work
+
+#' gopher down
+# enr.list <- lapply(gene.ls,function(r){
+#   lapply(r,t,task=list("go","kegg","pfam"),background = bg,
+#          url="potra2")
+# })
+
+background <- rownames(integ)
+goannot <- prepAnnot(mapping = "/mnt/picea/storage/reference/Populus-tremula/v2.2/gopher/gene_to_go.tsv")
+
+res.list <- list(deg.ls)
+suppressMessages(enr.list <- lapply(res.list,function(r){
+  lapply(r,topGO,background=background,annotation=goannot,alpha=0.1,p.adjust="none")
+}))
 
 # Code from Aman on visualization as in Chen et al., 2021
 list <- enr.list[[1]]

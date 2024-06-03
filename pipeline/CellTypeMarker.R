@@ -5,7 +5,7 @@ library(tidyverse)
 library(ggplot2)
 library(here)
 library(viridis)
-library(scCustomize)
+# library(scCustomize)
 library(qs)
 
 # load the marker files
@@ -28,6 +28,8 @@ names(markeranno) <- selectedmarker$GeneId
 # load seurat object
 integ <- readRDS("~/shruti/SNRIII/data/SeuratOut/integ.rds")
 DefaultAssay(integ) <- "RNA"
+
+etc <- "Potra2n5c11091"
 
 # rename the clusters
 integ <- RenameIdents(object = integ,
@@ -55,11 +57,11 @@ integ <- ScaleData(integ, features = rownames(integ), assay = "integrated")
 avgexp = AverageExpression(integ, assay="integrated", return.seurat = T, 
                            group.by = 'integrated_snn_res.0.6')
 
-DoHeatmap(avgexp, features = "Potra2n15c29002",angle = 0) + guides(color="none") +
+DoHeatmap(avgexp, features = "Potra2n3c7095",angle = 0) + guides(color="none") +
   scale_fill_gradientn(colors = viridis(100)) + #inferno(100)
   theme(axis.text.y = element_text(size = 6))
 
-DotPlot(subset(integ, subset = sample =="ctrl"), features = etc,
+DotPlot(subset(integ, subset = sample =="ctrl"), features = "Potra2n3c7095",
         dot.scale = 10)+ ylab(NULL)+RotatedAxis()+coord_flip()+
   scale_colour_viridis(option="viridis")+ xlab(NULL)+ylab(NULL)
   
@@ -124,13 +126,13 @@ split_seurat <- split_seurat[c("ctrl", "kno")]
 
 # grep( "^mt-", rownames(seurat.object), value = T)
 #' Plot using different methods
-DotPlot(integClCyc, features = tga1, cols = c("#005AB5", "#DC3220"),
+DotPlot(integ, features = etc, cols = c("#005AB5", "#DC3220"),
         dot.scale = 8, split.by = "sample") + RotatedAxis() + coord_flip()+ 
   ylab(NULL) +xlab(NULL)
 
 cluster19 <- c("Potra2n19c34419","Potra2n7c15685","Potra2n7c15689","Potra2n9c19910","Potra2n10c21469","Potra2n9c18825","Potra2n11c22484","Potra2n7c15682","Potra2n5c12320","Potra2n2c5371","Potra2n5c12223")
 
-DotPlot(integ, features = etc[1:70], dot.scale = 10) +
+DotPlot(integ, features = etc, dot.scale = 10) +
   ylab(NULL)+scale_colour_viridis(option="viridis")+
   scale_x_discrete() + xlab(NULL)+ RotatedAxis()+coord_flip()
 
@@ -440,4 +442,8 @@ issa <- c("Potra2n4c8952","Potra2n5c10536","Potra2n2c6410","Potra2n14c27598", "P
 # 5.9 snRNA Seq vegetative shoot apex from Conde et al., 2022
 condeClst <- c("Potra2n10c20548","Potra2n10c20676","Potra2n10c20892","Potra2n10c21070","Potra2n10c21478","Potra2n10c21634","Potra2n10c22054","Potra2n12c24397","Potra2n12c24714","Potra2n14c26506","Potra2n14c27625","Potra2n15c27961","Potra2n15c29012","Potra2n16c29503","Potra2n16c29820","Potra2n17c30845","Potra2n18c32645","Potra2n18c32648","Potra2n18c32756","Potra2n18c33124","Potra2n1c1621","Potra2n1c2062","Potra2n1c2670","Potra2n1c534","Potra2n1c923","Potra2n2c4945","Potra2n2c5108","Potra2n2c5386","Potra2n2c5448","Potra2n2c5872","Potra2n2c5894","Potra2n2c6106","Potra2n3c7548","Potra2n3c7649","Potra2n3c8006","Potra2n4c10284","Potra2n4c10286","Potra2n4c10286","Potra2n4c8449","Potra2n4c9001","Potra2n5c12554","Potra2n6c13216","Potra2n6c13402","Potra2n7c16584","Potra2n8c17128")
 
+# some more cell type markers
 etc <- c("Potra2n3c7548","Potra2n5c11905","Potra2n2c5495","Potra2n16c30091","Potra2n14c27598","Potra2n3c7945","Potra2n8c16946")
+
+# feronia
+fer <- c("Potra2n16c30521", "Potra2n16c30523", "Potra2n6c14356")

@@ -30,7 +30,7 @@ DefaultAssay(kcl0) <- "SCT"
 DimPlot(kcl0, reduction = "umap", pt.size = 0.01, label = TRUE)
 
 # Take few clusters of the known identities
-kcl1 <- subset (kcl0, subset= integrated_snn_res.0.6==c("16","5","14","18","13","15","2","17","4"))
+kcl1 <- subset (kcl0, subset= integrated_snn_res.0.6==c("16","5","14","18","13","15","17","4"))
 
 DimPlot(kcl0, reduction = "umap", pt.size = 0.01, label = TRUE)
 cds <- as.cell_data_set(kcl1)
