@@ -29,8 +29,6 @@ names(markeranno) <- selectedmarker$GeneId
 integ <- readRDS("~/shruti/SNRIII/data/SeuratOut/integ.rds")
 DefaultAssay(integ) <- "RNA"
 
-etc <- "Potra2n5c11091"
-
 # rename the clusters
 integ <- RenameIdents(object = integ,
                       "0" = "Unknown 0","1" = "Fiber Precursor 1",
@@ -38,7 +36,7 @@ integ <- RenameIdents(object = integ,
                       "4" = "Early Fiber 4", "5" = "Ray 5",
                       "6" = "Early Vessel 6","7" = "Ray 7",
                       "8" = "Unknown 8", "9" = "Unknown 9",
-                      "10" = "Fiber Precursor 19","11" = "Unknown 11",
+                      "10" = "Fiber Precursor 10","11" = "Unknown 11",
                       "12" = "Fiber 12","13" = "Unknown 13",
                       "14" = "Fusiform Initial 14", "15" = "Fiber 15",
                       "16" = "Ray/Fusiform Initial 16","17" = "Late Vessel 17",
@@ -70,7 +68,7 @@ DotPlot(seurat_integrated, features = selectedmarker[selectedmarker$CellType == 
   RotatedAxis() +scale_colour_viridis(option="viridis")+ xlab(NULL)+
   scale_x_discrete(labels = markeranno)
 
-DotPlot(subset(integ, subset = sample =="kno"), features = "Potra2n15c29002", dot.scale = 10)+
+DotPlot(subset(integ, subset = sample =="ctrl"), features = ralf, dot.scale = 10)+
         # idents=c("Phloem like 19","Cambium 20","Ray/ Fusiform Initial 16",
         #          "Ray 5","Ray 7","Ray 18", "Fusiform Initial 14",
         #          "Early Vessel 6","Late Vessel 17", "Fiber Precursor 10",
@@ -79,7 +77,7 @@ DotPlot(subset(integ, subset = sample =="kno"), features = "Potra2n15c29002", do
         #          "Unknown 11", "Unknown 13")) 
 ylab(NULL)+ xlab(NULL)+
   RotatedAxis()+
-  scale_colour_viridis(option="inferno")#+ scale_x_discrete(labels = markeranno)
+  scale_colour_viridis(option="viridis")#+ scale_x_discrete(labels = markeranno)
 
 etc <- c(clustMarker[clustMarker$Cluster == "1",]$GeneId, 
          clustMarker[clustMarker$Cluster == "2",]$GeneId, 
@@ -126,8 +124,8 @@ split_seurat <- split_seurat[c("ctrl", "kno")]
 
 # grep( "^mt-", rownames(seurat.object), value = T)
 #' Plot using different methods
-DotPlot(integ, features = etc, cols = c("#005AB5", "#DC3220"),
-        dot.scale = 8, split.by = "sample") + RotatedAxis() + coord_flip()+ 
+DotPlot(integ, features = ralf, cols = c("#005AB5", "#DC3220"),
+        dot.scale = 10, split.by = "sample") + RotatedAxis() + coord_flip()+ 
   ylab(NULL) +xlab(NULL)
 
 cluster19 <- c("Potra2n19c34419","Potra2n7c15685","Potra2n7c15689","Potra2n9c19910","Potra2n10c21469","Potra2n9c18825","Potra2n11c22484","Potra2n7c15682","Potra2n5c12320","Potra2n2c5371","Potra2n5c12223")
@@ -444,6 +442,3 @@ condeClst <- c("Potra2n10c20548","Potra2n10c20676","Potra2n10c20892","Potra2n10c
 
 # some more cell type markers
 etc <- c("Potra2n3c7548","Potra2n5c11905","Potra2n2c5495","Potra2n16c30091","Potra2n14c27598","Potra2n3c7945","Potra2n8c16946")
-
-# feronia
-fer <- c("Potra2n16c30521", "Potra2n16c30523", "Potra2n6c14356")

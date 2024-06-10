@@ -25,8 +25,6 @@ suppressPackageStartupMessages({
 })
 
 #' Load markers from step 5
-# markers <- readRDS("~/shruti/SNR-u2023011/analysis/snrIII/dnStrm/markerWilcox.rds")
-
 integ <- readRDS("~/shruti/SNR-u2023011/analysis/snrIII/integNucl.rds")
 DefaultAssay(integ) <- "RNA"
 
@@ -38,21 +36,28 @@ DefaultAssay(ctrl) <- "RNA"
 ctrl <- NormalizeData(ctrl, verbose = FALSE)
 
 # subset to 300 cells 
-sub <- subset(ctrl, cells = WhichCells(integ, downsample = 200))
-table(sub@active.ident)
+# sub <- subset(ctrl, cells = WhichCells(integ, downsample = 200))
+# table(sub@active.ident)
 # 0   1   2   3   4   5   6   7   8   9  10  11  12  13  14  15  16 
 # 300 300 300 300 300 300 300 300 300 300 287 261 289 159 206 241 226 
 # 17  18  19  20 
 # 191 119  87  24
 
 # Compute differentiall expression
-markers_genes_sub <- FindAllMarkers(
-  sub, logfc.threshold = -Inf, test.use = "wilcox", min.pct = 0.05,
+# markers_genes_sub <- FindAllMarkers(
+#   sub, logfc.threshold = -Inf, test.use = "wilcox", min.pct = 0.05,
+#   min.diff.pct = 0, only.pos = TRUE, max.cells.per.ident = 20, assay = "RNA")
+
+markers_genes <- FindAllMarkers(
+  ctrl, logfc.threshold = -Inf, test.use = "wilcox", min.pct = 0.05,
   min.diff.pct = 0, only.pos = TRUE, max.cells.per.ident = 20, assay = "RNA")
 
-saveRDS(markers_genes_sub, file = "../SNR-u2023011/analysis/markers/crl_sub.rds")
-gene_rank <- setNames(crl_sub$avg_log2FC, 
-                      casefold(rownames(crl_sub), upper = T))
+gene_rank <- setNames(markers_genes$avg_log2FC, 
+                      casefold(rownames(markers_genes), upper = T))
+
+# saveRDS(markers_genes_sub, file = "../SNR-u2023011/analysis/markers/crl_sub.rds")
+# gene_rank <- setNames(crl_sub$avg_log2FC, 
+#                       casefold(rownames(crl_sub), upper = T))
 
 # gopher is down, use TopGO instead
 suppressMessages({
@@ -68,7 +73,8 @@ pal=brewer.pal(8,"Dark2")
 hpal <- colorRampPalette(c("blue","white","red"))(100)
 mar <- par("mar")
 
-deg.ls <- split(rownames(crl_sub), f = crl_sub$cluster)
+deg.ls <- split(rownames(markers_genes), f = markers_genes$cluster)
+# deg.ls <- split(rownames(crl_sub), f = crl_sub$cluster)
 # deg.ls is a list, still need to make a list for enrichment
 gene.ls <- list(deg.ls)
 
@@ -94,7 +100,7 @@ gene.ls <- list(deg.ls)
 #' filt_seurat <- CreateSeuratObject(filt_counts,
 #'                                       meta.data = integ@meta.data)
 
-bg <- list(rownames(integ))
+# bg <- list(rownames(integ))
 #' When I use rownames(filtered_seurat), the enrichment doesn't work
 
 #' gopher down
