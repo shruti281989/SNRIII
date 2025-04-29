@@ -268,6 +268,8 @@ suppressPackageStartupMessages({
   library(reshape2)
   library(tidyverse)
   library(pheatmap)
+  library(viridis)
+  library(readxl)
 })
 
 #' * Graphics
@@ -276,9 +278,22 @@ hpal <- colorRampPalette(c("blue","white","red"))(100)
 mar <- par("mar")
 
 #' DEGs in SNRIII
-degSnr <-read.delim(here("~/shruti/SNR-u2023011/analysis/snrIII/clRngrCntNucl/degSNRIII.txt"), header = T,sep = "\t")
-upKno <- degSnr %>% filter (degSnr$status == "up in kno")  %>%pull(gene)
-dnkno <- degSnr %>% filter (degSnr$status == "down in kno")  %>%pull(gene)
+degSnr <-read.delim(here("~/shruti/SNR-u2023011/analysis/snrIII/dnStrm/degSNRIII.txt"), header = T,sep = "\t")
+upKno <- degSnr %>% filter(status == "up in kno" & FDR < 0.01) %>%
+  pull(GeneID) %>% unique()
+dnKno <- degSnr %>% filter(status == "down in kno" & FDR < 0.01) %>%
+  pull(GeneID) %>% unique()
+
+degSnr <-read.delim(here("~/shruti/SNRIII/data/SeuratOut/degWilcoxpct0.1fdr0.01.txt"), header = T,sep = "\t")
+upKno <- degSnr %>% filter(Level.after.nitrate.tretament == "Upregulated") %>%
+  pull(Gene) %>% unique()
+dnKno <- degSnr %>% filter(Level.after.nitrate.tretament == "Downregulated") %>%
+  pull(Gene) %>% unique()
+
+# degSnr <- read_excel("~/shruti/SNRIII/data/SeuratOut/bulkDegvsScDeg.xlsx", 
+                     # sheet = 1)
+# upKno <- degSnr %>% filter(scRNA == "up") %>% pull(Potra) %>% unique()
+# dnKno <- degSnr %>% filter(scRNA == "dn") %>% pull(Potra) %>% unique()
 
 aspwood <- read.table("~/shruti/SNR-u2023011/analysis/publisheddatasets/AspWood_tpm.txt", header = TRUE)
 aspwoodtpm <- dcast(aspwood, gene_id ~ sample_name)
@@ -393,7 +408,8 @@ orderaspwood <- c("T1-Phloem-01",
 
 aspwoodtpm <- aspwoodtpm[orderaspwood]
 rownames(aspwoodtpm) <- aspwoodtpm$gene_id
-aspdata <- as.matrix(select(aspwoodtpm, c(1, 1:107)))
+# aspdata <- as.matrix(select(aspwoodtpm, c(1, 1:107)))
+aspdata <- subset(aspwoodtpm, select = grep("T1-*", colnames(aspwoodtpm)))
 
 atnnotation <- read.delim(here("~/shruti/ERF85GeneExp/doc/potra_atgenes.txt"), header = FALSE, sep = "\t")
 colnames(atnnotation) <- c("Potra_ID", "AT_Symbols")
@@ -401,26 +417,30 @@ degAnot <- atnnotation[match(rownames(aspwoodtpm), atnnotation$Potra_ID),]
 all(rownames(aspwoodtpm) == degAnot$Potra_ID)
 
 hmap2 <- function(selGene, file_name) {
-  tres <- aspdata[rownames(aspdata) %in% selGene, ]
-  tres1 <- tres[rowSums(tres != 0) > 0, ]
+  tres1 <- aspdata[rownames(aspdata) %in% selGene, ]
+  tres1 <- tres1[rowSums(tres1 != 0) > 0, ]
+  if (nrow(tres1) == 0) stop("No genes found with non-zero expression.")
   # png(file.path(here("~/shruti/SNR-u2023011/analysis/plots/"),
   #               paste0(file_name,".png")), res= 250,height = 2000, width = 2000)
   # 
-  svg(file.path(here("~/shruti/SNR-u2023011/analysis/plots/"),
-                paste0(file_name,".svg")), pointsize = 8)
-
-  heatmap.2(t(scale(t(tres1))),
-            distfun = pearson.dist,
-            hclustfun = function(X){hclust(X,method="ward.D2")},
-            trace="none", col=hpal, margins =c(18,18), cexCol = 0.1,
-            cexRow = 0.1, main = file_name, key = TRUE, keysize = 1,
-            Colv = FALSE, Rowv = TRUE, dendrogram = "row",
-            labRow = paste(rownames(tres1), degAnot$AT_Symbols[match(rownames(tres1), degAnot$Potra_ID)])
+  svg(file.path("~/shruti/SNR-u2023011/analysis/plots/", paste0(file_name, ".svg")),
+      width = 12, height = 12, pointsize = 8)
+  heatmap_result <- heatmap.2(
+    t(scale(t(tres1))), distfun = pearson.dist,
+    hclustfun = function(X) hclust(X, method = "ward.D2"),
+    trace = "none", col = hpal, margins = c(8, 8), cexCol = 0.1,
+    cexRow = 0.1, key = TRUE, keysize = 1, main = file_name,
+    Colv = FALSE, Rowv = TRUE, dendrogram = "row",
+    labRow = paste(rownames(tres1), degAnot$AT_Symbols[match(rownames(tres1), degAnot$Potra_ID)])
   )
   dev.off()
+  
+  gene_order <- rownames(tres1)[rev(heatmap_result$rowInd)]
+  write.table(gene_order, file = file.path("~/shruti/SNR-u2023011/analysis/plots/", paste0(file_name, "_gene_order.txt")),
+              quote = FALSE, row.names = FALSE, col.names = FALSE)
 }
 
-hmap2(dnkno,"dnKno")
+hmap2(dnKno, "dnKno")
 
 # If the logTPM+1 is needed
 aspdatalog <- log2(aspdata + 1)
@@ -435,3 +455,37 @@ pheatmap(tres2,
          color = mako(100),
          clustering_method = "ward.D2",
          border_color = NA)
+
+# Part 3: use seurat findmarkers to get the DEG genes 
+integ <- readRDS("~/shruti/SNRIII/data/SeuratOut/integ.rds")
+
+DefaultAssay(integ) <- "RNA"
+integ <- NormalizeData(integ, verbose = FALSE)
+
+Idents(integ) <- "integrated_snn_res.0.6"
+integ$seurat_clusters <- Idents(integ)
+
+seurat_marker.list <- map(0:20,function(c){
+  FindMarkers(subset(integ, subset = seurat_clusters == c), 
+              ident.1 = "kno", group.by = "sample", min.pct = 0.5, only.pos=F,
+              logfc.threshold = 1.0)})
+
+seurat_marker.list <- map(0:20,function(c){
+  FindMarkers(subset(integ, subset = seurat_clusters == c), 
+              ident.1 = "kno", group.by = "sample", min.pct = 0.1, only.pos=F,
+              logfc.threshold = 1.0)})
+
+names(seurat_marker.list) <- paste0("Cluster_",0:20)
+filtered.marker <- map(names(seurat_marker.list),function(n){
+  dplyr::filter(seurat_marker.list[[n]],p_val_adj < 0.01) %>%
+    mutate(cluster = n,
+           gene = rownames(.))
+})
+
+filtered_markers_df <- do.call(rbind, filtered.marker)
+
+write.table(filtered_markers_df, "data/SeuratOut/output/markerWilcox_lfc1_fdr0.01_pct0.5.txt", 
+            row.names = F,col.names = T, quote = F, sep="\t")
+
+write.table(filtered_markers_df, "data/SeuratOut/output/markerWilcox_lfc1_fdr0.01_pct0.1.txt", 
+            row.names = F,col.names = T, quote = F, sep="\t")

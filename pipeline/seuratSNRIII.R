@@ -188,7 +188,8 @@ metadata %>%
   theme(plot.title = element_text(hjust=0.5, face="bold")) +
   ggtitle("NCells vs NGenes")
 #'
-#'Plot correlation between genes detected and number of UMIs and determine whether strong presence of cells with low numbers of genes/UMIs
+#'Plot correlation between genes detected and number of UMIs and determine 
+# whether strong presence of cells with low numbers of genes/UMIs
 metadata %>% 
   ggplot(aes(x=nUMI, y=nGene)) + 
   geom_point() + 

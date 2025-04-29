@@ -23,18 +23,18 @@ kcl0 <- split_seurat[["ctrl"]]
 rm(split_seurat, integ)
 
 # With mtcp genome and with cell cycle
-integ8 <- readRDS("~/shruti/SNR-u2023011/analysis/snrIII/clRngrCntNuclMtCp/mtCp/integ8.rds")
-Idents(integ8) <- integ8$integrated_snn_res.0.6
+# integ8 <- readRDS("~/shruti/SNR-u2023011/analysis/snrIII/clRngrCntNuclMtCp/mtCp/integ8.rds")
+# Idents(integ8) <- integ8$integrated_snn_res.0.6
 
 # decided to remove cluster 1 from kcl
-integ8 <- subset(integ8, subset = seurat_clusters == '1', invert=T)
+# integ8 <- subset(integ8, subset = seurat_clusters == '1', invert=T)
 
 # Split the data you loaded and extract only the control
-split_seurat <- SplitObject(integ8, split.by = "sample")
-kcl0 <- split_seurat[["kclmtcp"]]
-# kno0 <- split_seurat[["knomtcp"]]
-# kcl0 <- split_seurat[["ctrl"]]
-rm(split_seurat)
+# split_seurat <- SplitObject(integ8, split.by = "sample")
+# kcl0 <- split_seurat[["kclmtcp"]]
+# # kno0 <- split_seurat[["knomtcp"]]
+# # kcl0 <- split_seurat[["ctrl"]]
+# rm(split_seurat)
 
 #Setting default assay back to RNA
 DefaultAssay(kcl0) <- "RNA"
@@ -183,6 +183,7 @@ orderaspwood <- c("T1-Phloem-01",
 aspwoodtpm <- aspwoodtpm[orderaspwood]
 rownames(aspwoodtpm) <- aspwoodtpm$gene_id
 
+# go to big heatmap
 #Join tables and correlation
 pseudobulk <- as.data.frame(kcl0bulkscale$RNA)
 pseudobulk$gene_id <- rownames(pseudobulk)
@@ -345,7 +346,6 @@ duSTmainPotra$gene <- NULL
 
 duSTsub<- read.csv("~/shruti/SNR-u2023011/analysis/publisheddatasets/Du_sub_rnamean.csv", header = TRUE)
 duSTsub <- subset(duSTsub, select = -c(geneID,description))
-
 duSTsub$Potri <- sub(".v4.1","",duSTsub$gene)
 duSTsubPotra <- inner_join(duSTsub,potrapotri)
 duSTsubPotra$Potri <- NULL
@@ -376,9 +376,41 @@ shilcmnorm$Potri <- rownames(shilcmnorm)
 shilcmnormPotra <- inner_join(shilcmnorm,potrapotri)
 shilcmnormPotra$Potri <- NULL
 
-#Drop unused columns
-aspwooddrop <- subset(aspwoodtpm, select = grep("T4-*", colnames(aspwoodtpm)))
+# COnde et al, 2023
+conde <- readRDS("data/condeVascularCells.rds")
+DefaultAssay(conde) <- "RNA"
+conde$oldclusters <- conde$seurat_clusters
+conde$seurat_clusters <- conde@active.ident
+conde$orig.ident <- paste0("conde_",conde$seurat_clusters)
+# DimPlot(conde, reduction = "umap", pt.size = 0.01, label = TRUE)
+condebulkscale <- AggregateExpression(conde, group.by = "orig.ident") #slot = "data"
+pseudocondebulk <- as.data.frame(condebulkscale$RNA)
+pseudocondebulk$gene_id <- rownames(pseudocondebulk)
+pseudocondebulk$Potri <- sub(".v4.1","",pseudocondebulk$gene_id)
+pseudocondebulkPotra <- inner_join(pseudocondebulk,potrapotri)
+pseudocondebulkPotra$Potri <- NULL
+pseudocondebulkPotra$gene_id <- NULL
+
+#Drop unused columns (optional)
+aspwooddrop <- subset(aspwoodtpm, select = grep("T1-*", colnames(aspwoodtpm)))
 aspwooddrop$Potra <- aspwoodtpm$gene_id
+aspwooddrop2 <- subset(aspwoodtpm, select = grep("T2-*", colnames(aspwoodtpm)))
+aspwooddrop2$Potra <- aspwoodtpm$gene_id
+aspwooddrop3 <- subset(aspwoodtpm, select = grep("T3-*", colnames(aspwoodtpm)))
+aspwooddrop3$Potra <- aspwoodtpm$gene_id
+aspwooddrop4 <- subset(aspwoodtpm, select = grep("T4-*", colnames(aspwoodtpm)))
+aspwooddrop4$Potra <- aspwoodtpm$gene_id
+# aspwoodtpm$Potra <- aspwoodtpm$gene_id
+# pseudobulk <- as.data.frame(kcl0bulkscale$RNA)
+# pseudobulk$Potra <- rownames(pseudobulk)
+# exp <- inner_join(pseudobulk,aspwooddrop)
+# exp2 <- inner_join(exp,tungtpmPotra)
+# exp3 <- inner_join(exp2,shilcmnormPotra)
+# exp4 <- inner_join(exp3,duSTsubPotra)
+# exp5 <- inner_join(exp4,duSTmainPotra)
+# exp5$Potra <- NULL
+# pcor <- cor(exp5, method = "pearson")
+
 tungdrop <- subset(tungtpmPotra, select = -grep("*.mean.TPM", colnames(tungtpmPotra)))
 shidrop <- subset(shilcmnormPotra, select = -grep("Three*", colnames(shilcmnormPotra)))
 shidrop <- subset(shidrop, select = -grep("Leaf*", colnames(shidrop)))
@@ -397,32 +429,39 @@ exp4 <- inner_join(exp3,duSTsubpick)
 exp5 <- inner_join(exp4,duSTmainpick)
 exp5$Potra <- NULL
 pcor <- cor(exp5, method = "pearson")
-#pheatmap(pcor, 
-#         fontsize = 7,
-#         cluster_rows = FALSE,
-#         cluster_cols = FALSE) #Order preserved
+
+# for paper
+pseudobulk <- as.data.frame(kcl0bulkscale$RNA)
+pseudobulk$Potra <- rownames(pseudobulk)
+exp <- inner_join(pseudobulk,aspwooddrop)
+exp2 <- inner_join(exp,tungtpmPotra)
+exp3 <- inner_join(exp2,shilcmnormPotra)
+exp4 <- inner_join(exp3,duSTsubPotra)
+exp5 <- inner_join(exp4,duSTmainPotra)
+exp6 <- inner_join(exp5,pseudocondebulkPotra)
+exp7 <- inner_join(exp6,aspwooddrop2)
+exp8 <- inner_join(exp7,aspwooddrop3)
+exp9 <- inner_join(exp8,aspwooddrop4)
+colnames(exp9)
+exp9$Potra <- NULL
+pcor <- cor(exp9, method = "pearson")
+# pheatmap(pcor, fontsize = 7, cluster_rows = FALSE, #display_numbers = T,
+#          cluster_cols = FALSE) #Order preserved
 
 #Small heatmap
 pcorsubset <- pcor[-grep("kcl*", rownames(pcor)),grep("kcl*", rownames(pcor))]
-pheatmap(pcorsubset, 
-         fontsize = 7,
-         cluster_rows = FALSE,
-         cluster_cols = FALSE,
+pheatmap(pcorsubset, fontsize = 7, cluster_rows = FALSE, cluster_cols = FALSE,
          display_numbers = round(pcorsubset, digits = 2))
 
 #Set min clolor range at 0.3/ 0.2
 mat_breaks <- seq(0.3, max(pcorsubset), length.out = 100)
 # mat_breaks <- seq(0.2, max(pcorsubset), length.out = 100)
 
-pheatmap(pcorsubset, 
-         fontsize = 16,
-         cluster_rows = FALSE,
-         # cluster_cols = FALSE,
-         #display_numbers = round(pcorsubset, digits = 2),
-         # color = inferno(100), 
-         color = magma(100),
-         # color = viridis(100), 
+pheatmap(pcorsubset, fontsize = 2,cluster_rows = FALSE, # cluster_cols = FALSE,
+         display_numbers = round(pcorsubset, digits = 3), number_color = "white",
+         fontsize_number = 2,
+         # color = inferno(100),  # color = viridis(100), 
          # color = mako(100),
-         border_color = NA,
-         breaks = mat_breaks,
-         gaps_row = c(28,37, 49))
+         color = magma(100),
+         border_color = NA, breaks = mat_breaks, gaps_row = c(25,37,61,71,88,95,121,149))
+         # gaps_row = c(28, 37, 49))
