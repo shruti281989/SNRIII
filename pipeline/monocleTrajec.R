@@ -22,6 +22,8 @@ suppressPackageStartupMessages({
 # integMtCp <- readRDS("~/shruti/SNRIII/data/SeuratOut/integMtCp.rds")
 integ <- readRDS("~/shruti/SNRIII/data/SeuratOut/integ.rds")
 
+# Goto PartB
+
 # Part A. trial with only control
 split_seurat <- SplitObject(integ, split.by = "sample")
 # kcl0 <- split_seurat[["kclmtcp"]]
@@ -115,7 +117,7 @@ integ$seurat_clusters <- integ@active.ident
 
 # Take few clusters of the known identities
 
-# fiber and vessel
+# fiber and vessel (using this now)
 integ1 <- WhichCells(integ, ident= c("1","10","6","14","17", "4","15"))
 
 # fib
@@ -141,7 +143,7 @@ integ1 <- WhichCells(integ, ident= c("1","10","6","14","17", "4","15"))
 # integ1 <- WhichCells(integ, ident= c("1","4","15","17","14","10","12","6","20"))
 
 # all- 16 as root
-integ1 <- WhichCells(integ, ident= c("1","4","15","17","14","10","12","6","20","18","19","5","7","8","16"))
+# integ1 <- WhichCells(integ, ident= c("1","4","15","17","14","10","12","6","20","18","19","5","7","8","16"))
 
 # fib only
 # integ1 <- WhichCells(integ, ident= c("1","4","15","14"))
@@ -151,12 +153,12 @@ integ1 <- WhichCells(integ, ident= c("1","4","15","17","14","10","12","6","20","
 
 # integ1 <- WhichCells(integ, ident= c("17","14","6","16"))
 
-# integ1 = subset(integ, cells = integ1)
+integ1 = subset(integ, cells = integ1)
+integ1$ident <- integ1@active.ident
 cds <- as.cell_data_set(integ1)
-# integ1$ident <- integ1@active.ident
 
 # use partition
-cds <- cluster_cells(cds, resolution=1e-3) #for fibVes, 2,; fib, 1,2,4,3; fibVes3,4, all
+cds <- cluster_cells(cds, resolution = 1e-3) #for fibVes, 2,; fib, 1,2,4,3, 5; fibVes3,4, all, fiber and vessel
 
 p1 <- plot_cells(cds, color_cells_by = "cluster", show_trajectory_graph = FALSE)
 p2 <- plot_cells(cds, color_cells_by = "partition", show_trajectory_graph = FALSE)
@@ -191,7 +193,11 @@ plot_cells(cds, color_cells_by = "cluster", label_groups_by_cluster=FALSE,
 # cds <- order_cells(cds, root_cells = colnames(cds[,clusters(cds) == 6]))
 
 # for fibVes4
-cds <- order_cells(cds, root_cells = colnames(cds[,clusters(cds) == 15]))
+# cds <- order_cells(cds, root_cells = colnames(cds[,clusters(cds) == 15]))
+
+# for fiber and vessel
+cds <- order_cells(cds, root_cells = colnames(cds[,clusters(cds) == 14]))
+cds <- order_cells(cds, reduction_method = "UMAP") #choose 14
 
 plot_cells(cds,
            color_cells_by = "pseudotime",group_cells_by = "cluster",
@@ -201,8 +207,11 @@ plot_cells(cds,
 
 integrated.sub <- as.Seurat(cds, assay = NULL)
 FeaturePlot(integrated.sub, "monocle3_pseudotime")
+saveRDS(integrated.sub, "data/SeuratOut/cdsMonocleSeuratFibVes.rds")
 
 cds$monocle3_pseudotime <- pseudotime(cds)
+saveRDS(cds, "data/SeuratOut/cdsfibVes.rds")
+
 data.pseudo <- as.data.frame(colData(cds))
 ggplot(data.pseudo, aes(monocle3_pseudotime, 
                         reorder(seurat_clusters, monocle3_pseudotime), 
@@ -210,7 +219,17 @@ ggplot(data.pseudo, aes(monocle3_pseudotime,
 ggplot(data.pseudo, aes(monocle3_pseudotime, 
                         reorder(ident, monocle3_pseudotime), 
                         fill = ident)) + geom_boxplot()
+cds_graph_test_results <- graph_test(cds, neighbor_graph = "principal_graph",
+                                     cores = 8)
+saveRDS(cds_graph_test_results, "data/SeuratOut/cdsfibVes.rds")
 
+rowData(cds)$gene_short_name <- row.names(rowData(cds))
+head(cds_graph_test_results, error=FALSE, message=FALSE, warning=FALSE)
+deg_ids <- rownames(subset(cds_graph_test_results[order(cds_graph_test_results$morans_I, decreasing = TRUE),], q_value < 0.01))
+plot_cells(cds, genes=head(deg_ids), show_trajectory_graph = FALSE,
+           label_cell_groups = FALSE, label_leaves = FALSE)
+
+# stop here
 # without partition
 # Ves1 (ok if you try with part A) and 14 as the root
 # vesOnly <- WhichCells(integ, ident= c("17","14","6"))
@@ -242,6 +261,7 @@ ggplot(data.pseudo, aes(monocle3_pseudotime,
 
 # fibVes3 - 16 as root
 integ1 <- WhichCells(integ, ident= c("1","4","15","17","14","10","12","6","20","18","19","5","7","8","16"))
+
 integ1 = subset(integ, cells = integ1)
 DimPlot(integ1, reduction = "umap", pt.size = 0.01, label = TRUE)
 cds <- as.cell_data_set(integ1)
@@ -268,7 +288,8 @@ cds <- learn_graph(cds, use_partition = F)
 #            label_branch_points = F, label_roots = F, label_leaves = F,
 #            group_label_size = 5)
 
-cds <- order_cells(cds, reduction_method = "UMAP")
+cds <- order_cells(cds, reduction_method = "UMAP") #choose 1,10 and 14
+
 # plot_cells(cds, color_cells_by = "pseudotime", label_groups_by_cluster = F,
 #            label_branch_points = F, label_roots = F, label_leaves = F)
 cds$monocle3_pseudotime <- pseudotime(cds)
