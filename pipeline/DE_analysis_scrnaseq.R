@@ -159,6 +159,8 @@ for(cluster in 1:length(keepClusters)){
   write.csv(out, file = paste0(filePath, "_", "ctrlkno.csv"), quote=F, row.names = F)
   
 }
+
+
 # Clear workspace and restart R
 
 # Part 2: bulk DE analysis
@@ -489,3 +491,75 @@ write.table(filtered_markers_df, "data/SeuratOut/output/markerWilcox_lfc1_fdr0.0
 
 write.table(filtered_markers_df, "data/SeuratOut/output/markerWilcox_lfc1_fdr0.01_pct0.1.txt", 
             row.names = F,col.names = T, quote = F, sep="\t")
+
+
+# Clear workspace and restart R
+# find markers group wise
+suppressPackageStartupMessages({
+  library(Seurat)
+  library(tidyverse)
+  library(dplyr)
+  library(viridis)
+})
+
+set.seed(42)
+integ <- readRDS("~/shruti/SNRIII/data/SeuratOut/integ.rds")
+DefaultAssay(integ) <- "RNA"
+integ <- NormalizeData(integ, verbose = FALSE)
+Idents(integ) <- "integrated_snn_res.0.6"
+
+groups <- list(
+  ray = c("5", "7", "18"), fiber = c("4", "12", "15"), vessel = "17",
+  fusiformInitial = c("14", "16"), vesselPrecursor = "6", fiberPrecursor = c("1", "10"),
+  cambium = c("19", "20"), earlyRay = c("3", "8", "9", "11", "13"), unknown = c("0", "2")
+)
+
+cluster_to_group <- unlist(lapply(names(groups), \(g) setNames(rep(g, length(groups[[g]])), groups[[g]])))
+clusters <- as.character(Idents(integ))
+group_labels <- cluster_to_group[clusters]
+group_labels[is.na(group_labels)] <- "unassigned"
+samples <- sapply(strsplit(colnames(integ), "_"), `[`, 1)
+sample_group <- paste(samples, group_labels, sep = "_")
+integ <- AddMetaData(integ, metadata = data.frame(cell_group = group_labels, 
+                                                  group = sample_group))
+Idents(integ) <- "group"
+
+de_list <- list(
+  ray    = FindMarkers(integ, "kno_ray", "ctrl_ray", min.pct = 0.25, logfc.threshold = 1),
+  fiber  = FindMarkers(integ, "kno_fiber", "ctrl_ray", min.pct = 0.25, logfc.threshold = 1),
+  vessel = FindMarkers(integ, "kno_vessel", "ctrl_ray", min.pct = 0.25, logfc.threshold = 1)
+)
+
+filtered_de <- lapply(de_list, \(x) filter(x, p_val_adj < 0.01))
+genes <- lapply(filtered_de, rownames)
+ray.genes    <- genes$ray
+fiber.genes  <- genes$fiber
+vessel.genes <- genes$vessel
+
+common_genes <- Reduce(intersect, list(ray.genes, fiber.genes, vessel.genes))
+ray_only    <- setdiff(ray.genes, union(fiber.genes, vessel.genes))
+fiber_only  <- setdiff(fiber.genes, union(ray.genes, vessel.genes))
+vessel_only <- setdiff(vessel.genes, union(ray.genes, fiber.genes))
+
+genes.use <- unique(c(ray.genes, fiber.genes, vessel.genes))
+
+DefaultAssay(integ) <- "RNA"
+integ <- ScaleData(integ, features = genes.use, verbose = FALSE)
+
+hmap <- DoHeatmap(subset_integ, features = genes.use, group.by = "group") +
+  scale_fill_viridis() + theme(axis.text.y = element_text(size = 6))
+
+desired_order <- c("ctrl_ray", "kno_ray", "ctrl_fiber", "kno_fiber", "ctrl_vessel", "kno_vessel")
+Idents(integ) <- "group"
+Idents(subset_integ) <- factor(Idents(subset_integ), levels = desired_order)
+
+hmap <- DoHeatmap(subset_integ, features = genes.use, group.by = "group") +
+  scale_fill_viridis() + theme(axis.text.y = element_text(size = 6))
+library(svglite) 
+ggsave("data/SeuratOut/output/heatmap_ray_fiber_vessel_clustered.svg",
+       plot = hmap, width = 10, height = 8, device = "svg")
+
+gene_order <- hmap$data %>% distinct(Feature) %>% pull(Feature)
+
+write.table(gene_order, "data/SeuratOut/output/clustered_heatmap_gene_order.txt",
+            row.names = FALSE, col.names = FALSE, quote = FALSE)

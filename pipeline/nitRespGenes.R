@@ -6,15 +6,13 @@ suppressPackageStartupMessages({
   library(ggplot2)
   library(viridis)
   library(readxl)
-  library(qs)
+  # library(qs)
   library(gplots)
 })
 
 set.seed(42)
 # load seurat
 integ <- readRDS("~/shruti/SNRIII/data/SeuratOut/integ.rds")
-
-#' Plot using different methods
 DefaultAssay(integ) <- "RNA"
 
 # In case to plot for one sample, split the object
@@ -160,11 +158,6 @@ features_to_plot <- read.table("~/shruti/SNR-u2023011/analysis/snrIII/dnStrm/deg
 features_to_plot <- features_to_plot %>% filter(status=="up in kno" & FDR <0.05) %>%
   pull("GeneID")
 
-features_to_plot <- read.table("~/shruti/SNRIII/data/SeuratOut/degTableS2F.txt",
-                               header = TRUE, fill = TRUE, sep = "\t", quote = "")
-features_to_plot <- unique(features_to_plot)
-
-# for nitrogen scRNASeq figure in the manuscript
 features_to_plot <- nit$Potra
 features_to_plot <- c("Potra2n5c11320","Potra2n3c7718")
 
@@ -249,10 +242,11 @@ for (sample in unique(heatmap_data_clean$Sample)) {
 set.seed(42)
 integ <- readRDS("~/shruti/SNRIII/data/SeuratOut/integ.rds")
 DefaultAssay(integ) <- "RNA"
+
 sample_list <- SplitObject(integ, split.by = "sample")
 rm(integ)
 
-feaintegfeatures_to_plot <- read.table("~/shruti/SNRIII/data/SeuratOut/degTableS2F.txt",
+features_to_plot <- read.table("~/shruti/SNRIII/data/SeuratOut/degTableS2F.txt",
                                header = TRUE, fill = TRUE, sep = "\t", quote = "")
 features_to_plot <- features_to_plot %>% 
   filter(Level == "Upregulated", Cluster %in% c("4", "5", "7", "12", "15", "17", "18")) %>%
@@ -299,6 +293,128 @@ for (sample in unique(heatmap_data$Sample)) {
   mat <- heatmap_data %>%
     filter(Sample == sample) %>%
     pivot_wider(names_from = Cluster, values_from = ScaledExpression) %>%
+    column_to_rownames("Gene")
+  
+  # Ensure matrix has all clusters (fill missing ones with NA or 0)
+  missing_clusters <- setdiff(clusters_of_interest, colnames(mat))
+  if (length(missing_clusters) > 0) {
+    mat[missing_clusters] <- NA  # or 0 if you prefer
+  }
+  
+  # Reorder columns by cluster number
+  mat <- mat[, sort(colnames(mat))]
+  
+  # Reorder rows by ordered genes
+  mat <- mat[ordered_genes, , drop = FALSE]
+  
+  # Convert to numeric matrix, handle NA
+  mat <- as.matrix(mat)
+  storage.mode(mat) <- "numeric"
+  mat[is.na(mat)] <- 0  # Optional: impute missing with 0
+  
+  # Plot
+  svg(paste0("heatmap_", sample, ".svg"), width = 10, height = 8)
+  heatmap.2(mat, scale = "none", col = viridis(20), trace = "none",
+            margins = c(8, 8), dendrogram = "none", Rowv = FALSE, Colv = FALSE,
+            key = TRUE, key.title = "Scaled Expression", key.xlab = "Expression",
+            main = paste("Heatmap:", sample), cexCol = 1, cexRow = 0.5)
+  dev.off()
+}
+
+write.table(ordered_genes, paste0("gene_order_", ref_sample, ".txt"),
+            row.names = FALSE, col.names = FALSE, quote = FALSE)
+
+
+# groups <- list(ray = c("5", "7", "18"), fiber = c("4", "12", "15"),
+#                vessel = "17", fusiformInitial = c("14", "16"), vesselPrecursor = "6",
+#                fiberPrecursor = c("1", "10"), cambium = c("19", "20"),
+#                earlyRay = c("3", "8", "9", "11", "13"),
+#                unknown = c("0", "2"))
+# 
+# samples <- sapply(strsplit(colnames(integ), "_"), `[`, 1)
+# integ$seurat_clusters <- integ$integrated_snn_res.0.6
+# clusters <- as.character(integ$seurat_clusters)
+# sample_cluster <- paste(samples, clusters, sep = "_")
+# integ <- AddMetaData(integ, metadata = sample_cluster, col.name = "group")
+# Idents(integ) <- "group"
+# table(Idents(integ))
+
+# specific cluster groups
+set.seed(42)
+integ <- readRDS("~/shruti/SNRIII/data/SeuratOut/integ.rds")
+DefaultAssay(integ) <- "RNA"
+
+sample_list <- SplitObject(integ, split.by = "sample")
+rm(integ)
+
+features_to_plot <- read.table("~/shruti/SNRIII/data/SeuratOut/degTableS2F.txt",
+                               header = TRUE, fill = TRUE, sep = "\t", quote = "")
+features_to_plot <- features_to_plot %>% 
+  filter(Level == "Upregulated", Cluster %in% c("4", "5", "7", "12", "15", "17", "18")) %>%
+  pull("GeneId")
+
+clusters_of_interest <- c("4", "5", "7", "12", "15", "17", "18")
+
+# Define your custom cluster groups
+cluster_groups <- list(
+  `5_7` = c("5", "7"),
+  `4_12_15` = c("4", "12", "15"),
+  `17` = c("17")
+)
+
+# Subset and calculate average per grouped cluster
+avg_expr_list <- lapply(sample_list, function(sample_obj) {
+  expr_data <- GetAssayData(sample_obj, assay = "RNA", slot = "data")
+  meta <- sample_obj@meta.data
+  meta$cluster <- Idents(sample_obj)
+  
+  avg_expr_by_group <- lapply(names(cluster_groups), function(group_name) {
+    clusters <- cluster_groups[[group_name]]
+    cells_in_group <- rownames(meta)[meta$cluster %in% clusters]
+    if (length(cells_in_group) > 0) {
+      rowMeans(expr_data[, cells_in_group, drop = FALSE])
+    } else {
+      rep(NA, nrow(expr_data))  # handle missing clusters
+    }
+  })
+  
+  avg_expr_mat <- do.call(cbind, avg_expr_by_group)
+  colnames(avg_expr_mat) <- names(cluster_groups)
+  rownames(avg_expr_mat) <- rownames(expr_data)
+  as.data.frame(avg_expr_mat) %>%
+    rownames_to_column("Gene")
+})
+
+
+heatmap_data <- lapply(names(avg_expr_list), function(sample) {
+  expr <- avg_expr_list[[sample]] %>%
+    filter(Gene %in% features_to_plot) %>%
+    pivot_longer(-Gene, names_to = "ClusterGroup", values_to = "Expression") %>%
+    group_by(Gene) %>%
+    mutate(ScaledExpression = scale(Expression), Sample = sample) %>%
+    ungroup()
+}) %>% bind_rows()
+
+heatmap_data <- heatmap_data %>%
+  group_by(Gene, ClusterGroup, Sample) %>%
+  summarise(ScaledExpression = mean(ScaledExpression), .groups = "drop")
+
+ref_sample <- "kno"
+ref_mat <- heatmap_data %>% filter(Sample == ref_sample) %>%
+  pivot_wider(names_from = ClusterGroup, values_from = ScaledExpression) %>%
+  column_to_rownames("Gene") %>% as.matrix()
+
+ref_mat <- ref_mat[complete.cases(ref_mat), ]
+gene_order <- hclust(dist(ref_mat))$order
+ordered_genes <- rownames(ref_mat)[gene_order]
+
+heatmap_data <- heatmap_data %>% filter(Gene %in% ordered_genes)
+
+# Plot heatmaps using the same gene order
+for (sample in unique(heatmap_data$Sample)) {
+  mat <- heatmap_data %>%
+    filter(Sample == sample) %>%
+    pivot_wider(names_from = ClusterGroup, values_from = ScaledExpression) %>%
     column_to_rownames("Gene")
   
   # Ensure matrix has all clusters (fill missing ones with NA or 0)
