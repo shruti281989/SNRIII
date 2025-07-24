@@ -38,7 +38,7 @@ degEdgeR <- read.table("~/shruti/SNRIII/data/SeuratOut/output/edgeR_lfc1_fdr0.01
 nit <- read_excel("~/shruti/SNRIII/data/SeuratOut/bulkDegvsScDeg.xlsx", sheet = 2)
 
 #Cluster wise heatmap: scale the data first: 
-integ <- ScaleData(integ, ures = rownames(integ))
+integ <- ScaleData(integ, features = rownames(integ))
 DoHeatmap(integ, features = degAll$Potra, group.by="sample",
           group.colors = viridis(100))
 
@@ -343,9 +343,9 @@ write.table(ordered_genes, paste0("gene_order_", ref_sample, ".txt"),
 set.seed(42)
 integ <- readRDS("~/shruti/SNRIII/data/SeuratOut/integ.rds")
 DefaultAssay(integ) <- "RNA"
+Idents(integ) <- "integrated_snn_res.0.6"
 
 sample_list <- SplitObject(integ, split.by = "sample")
-rm(integ)
 
 features_to_plot <- read.table("~/shruti/SNRIII/data/SeuratOut/degTableS2F.txt",
                                header = TRUE, fill = TRUE, sep = "\t", quote = "")
@@ -353,16 +353,12 @@ features_to_plot <- features_to_plot %>%
   filter(Level == "Upregulated", Cluster %in% c("4", "5", "7", "12", "15", "17", "18")) %>%
   pull("GeneId")
 
+features_to_plot <- up_shared_2_only$fiber_vessel_not_ray
+
 clusters_of_interest <- c("4", "5", "7", "12", "15", "17", "18")
+cluster_groups <- list(`5,7,18` = c("5", "7", "18"), `4,12,15` = c("4", "12", "15"),
+  `17` = c("17"))
 
-# Define your custom cluster groups
-cluster_groups <- list(
-  `5_7` = c("5", "7"),
-  `4_12_15` = c("4", "12", "15"),
-  `17` = c("17")
-)
-
-# Subset and calculate average per grouped cluster
 avg_expr_list <- lapply(sample_list, function(sample_obj) {
   expr_data <- GetAssayData(sample_obj, assay = "RNA", slot = "data")
   meta <- sample_obj@meta.data
@@ -384,7 +380,6 @@ avg_expr_list <- lapply(sample_list, function(sample_obj) {
   as.data.frame(avg_expr_mat) %>%
     rownames_to_column("Gene")
 })
-
 
 heatmap_data <- lapply(names(avg_expr_list), function(sample) {
   expr <- avg_expr_list[[sample]] %>%
@@ -445,3 +440,45 @@ for (sample in unique(heatmap_data$Sample)) {
 
 write.table(ordered_genes, paste0("gene_order_", ref_sample, ".txt"),
             row.names = FALSE, col.names = FALSE, quote = FALSE)
+
+# for group wise deg
+library(readxl)
+library(dplyr)
+sheets <- list(ray = 1, vessel = 2, fiber = 3)
+deg <- lapply(sheets, function(sheet) read_xlsx("~/shruti/SNRIII/data/SeuratOut/degGroupWiseWilcox.xlsx", sheet = sheet))
+
+get_genes <- function(df, direction = "up") {
+  if (direction == "up") {
+    return(df %>% filter(avg_log2FC >= 1) %>% pull(gene))
+  } else {
+    return(df %>% filter(avg_log2FC < 1) %>% pull(gene))
+  }
+}
+
+gene_lists_up <- lapply(deg, get_genes, direction = "up")
+gene_lists_dn <- lapply(deg, get_genes, direction = "dn")
+
+get_common_unique <- function(gene_lists) {
+  common <- Reduce(intersect, gene_lists)
+  unique <- lapply(names(gene_lists), function(name) {
+    setdiff(gene_lists[[name]], unlist(gene_lists[names(gene_lists) != name]))
+  })
+  names(unique) <- paste0(names(gene_lists), "_only")
+  return(list(common = common, unique = unique))
+}
+
+up_genes   <- get_common_unique(gene_lists_up)
+dn_genes   <- get_common_unique(gene_lists_dn)
+
+get_pairwise_shared <- function(gene_lists) {
+  list(
+    ray_fiber_not_vessel   = intersect(gene_lists$ray, gene_lists$fiber) %>% setdiff(gene_lists$vessel),
+    ray_vessel_not_fiber   = intersect(gene_lists$ray, gene_lists$vessel) %>% setdiff(gene_lists$fiber),
+    fiber_vessel_not_ray   = intersect(gene_lists$fiber, gene_lists$vessel) %>% setdiff(gene_lists$ray)
+  )
+}
+
+up_shared_2_only <- get_pairwise_shared(gene_lists_up)
+dn_shared_2_only <- get_pairwise_shared(gene_lists_dn)
+
+# GOTO LINE 356 to plot

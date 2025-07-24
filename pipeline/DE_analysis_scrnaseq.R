@@ -505,8 +505,8 @@ suppressPackageStartupMessages({
 set.seed(42)
 integ <- readRDS("~/shruti/SNRIII/data/SeuratOut/integ.rds")
 DefaultAssay(integ) <- "RNA"
-integ <- NormalizeData(integ, verbose = FALSE)
 Idents(integ) <- "integrated_snn_res.0.6"
+integ <- NormalizeData(integ, verbose = FALSE)
 
 groups <- list(
   ray = c("5", "7", "18"), fiber = c("4", "12", "15"), vessel = "17",
@@ -525,32 +525,36 @@ integ <- AddMetaData(integ, metadata = data.frame(cell_group = group_labels,
 Idents(integ) <- "group"
 
 de_list <- list(
-  ray    = FindMarkers(integ, "kno_ray", "ctrl_ray", min.pct = 0.25, logfc.threshold = 1),
-  fiber  = FindMarkers(integ, "kno_fiber", "ctrl_ray", min.pct = 0.25, logfc.threshold = 1),
-  vessel = FindMarkers(integ, "kno_vessel", "ctrl_ray", min.pct = 0.25, logfc.threshold = 1)
+  ray    = FindMarkers(integ, "kno_ray", "ctrl_ray", min.pct = 0.1, logfc.threshold = 1),
+  fiber  = FindMarkers(integ, "kno_fiber", "ctrl_ray", min.pct = 0.1, logfc.threshold = 1),
+  vessel = FindMarkers(integ, "kno_vessel", "ctrl_ray", min.pct = 0.1, logfc.threshold = 1)
 )
 
 filtered_de <- lapply(de_list, \(x) filter(x, p_val_adj < 0.01))
+write.table(filtered_de$ray, "data/SeuratOut/output/rayWilcox_lfc1_fdr0.01_pct0.1.txt",
+            row.names = T, col.names = T, quote = F, sep="\t")
+write.table(filtered_de$fiber, "data/SeuratOut/output/fiberWilcox_lfc1_fdr0.01_pct0.1.txt",
+            row.names = T, col.names = T, quote = F, sep="\t")
+write.table(filtered_de$vessel, "data/SeuratOut/output/vesselWilcox_lfc1_fdr0.01_pct0.1.txt",
+            row.names = T, col.names = T, quote = F, sep="\t")
+
 genes <- lapply(filtered_de, rownames)
 ray.genes    <- genes$ray
 fiber.genes  <- genes$fiber
 vessel.genes <- genes$vessel
 
-common_genes <- Reduce(intersect, list(ray.genes, fiber.genes, vessel.genes))
-ray_only    <- setdiff(ray.genes, union(fiber.genes, vessel.genes))
-fiber_only  <- setdiff(fiber.genes, union(ray.genes, vessel.genes))
-vessel_only <- setdiff(vessel.genes, union(ray.genes, fiber.genes))
-
+# common_genes <- Reduce(intersect, list(ray.genes, fiber.genes, vessel.genes))
+# ray_only    <- setdiff(ray.genes, union(fiber.genes, vessel.genes))
+# fiber_only  <- setdiff(fiber.genes, union(ray.genes, vessel.genes))
+# vessel_only <- setdiff(vessel.genes, union(ray.genes, fiber.genes))
 genes.use <- unique(c(ray.genes, fiber.genes, vessel.genes))
 
 DefaultAssay(integ) <- "RNA"
 integ <- ScaleData(integ, features = genes.use, verbose = FALSE)
 
-hmap <- DoHeatmap(subset_integ, features = genes.use, group.by = "group") +
-  scale_fill_viridis() + theme(axis.text.y = element_text(size = 6))
-
 desired_order <- c("ctrl_ray", "kno_ray", "ctrl_fiber", "kno_fiber", "ctrl_vessel", "kno_vessel")
 Idents(integ) <- "group"
+subset_integ <- subset(integ, idents = desired_order)
 Idents(subset_integ) <- factor(Idents(subset_integ), levels = desired_order)
 
 hmap <- DoHeatmap(subset_integ, features = genes.use, group.by = "group") +
