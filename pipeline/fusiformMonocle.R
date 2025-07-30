@@ -8,6 +8,7 @@ suppressPackageStartupMessages({
   library(patchwork)
   library(ggplot2)
   library(ggridges)
+  library(viridis)
 })
 
 # integrated object:
@@ -17,7 +18,9 @@ integ$seurat_clusters <- integ@active.ident
 DefaultAssay(integ) <- "RNA"
 
 # try these and check
+#use this for paper if want to provide a common lineage
 fusiform <- WhichCells(integ, ident= c("1","4","6","10","14","15","17")) 
+
 fusiform <- WhichCells(integ, ident= c("1","4","10","14","15")) 
 fusiform <- WhichCells(integ, ident= c("6","14","17")) 
 
@@ -57,7 +60,7 @@ ggplot(data.pseudo, aes(x = monocle3_pseudotime, y = seurat_clusters,
                         fill = seurat_clusters)) +
   geom_density_ridges(scale = 1.2, rel_min_height = 0.01, alpha = 0.8) +
   scale_fill_viridis_d(option = "C") + theme_classic() +
-  labs(title = "Pseudotime distribution across fusiform clusters", 
+  labs(title = "Pseudotime distribution across clusters", 
        x = "Pseudotime", y = "Cluster") + theme(legend.position = "none")
 
 cds_graph_test_results <- graph_test(cds, neighbor_graph = "principal_graph",
@@ -65,14 +68,14 @@ cds_graph_test_results <- graph_test(cds, neighbor_graph = "principal_graph",
 # saveRDS(cds_graph_test_results, "data/SeuratOut/fusiformTrajec/cdsfib_graph.rds")
 saveRDS(cds_graph_test_results, "data/SeuratOut/fusiform-16Trajec/cdsfib_graph.rds")
 
-rowData(cds)$gene_short_name <- row.names(rowData(cds))
 deg_ids <- rownames(subset(cds_graph_test_results[order(cds_graph_test_results$morans_I, decreasing = TRUE),], q_value < 0.01))
-# write.table(deg_ids,"data/SeuratOut/fusiformTrajec/fibPseudotimeDeg0.01q.txt", 
+
+# write.table(deg_ids,"data/SeuratOut/fusiformTrajec/pseudotimeDeg0.01q.txt", 
 #             sep="\t", row.names = F,col.names = F, quote = F)
-# write.table(deg_ids,"data/SeuratOut/fusiform-16Trajec/fusiformPseudotimeDeg0.01q.txt", 
-#             sep="\t", row.names = F,col.names = F, quote = F)
-write.table(deg_ids,"data/SeuratOut/fusiformVes/fusiformVesPseudotimeDeg0.01q.txt", 
+write.table(deg_ids,"data/SeuratOut/fusiform-16Trajec/pseudotimeDeg0.01q.txt",
             sep="\t", row.names = F,col.names = F, quote = F)
+# write.table(deg_ids,"data/SeuratOut/fusiformVes/pseudotimeDeg0.01q.txt", 
+#             sep="\t", row.names = F,col.names = F, quote = F)
 
 plot_cells(cds, color_cells_by = "pseudotime", label_cell_groups=FALSE, 
            cell_size = 1, x = 1, y = 2, label_branch_points=F, label_leaves=F, 
@@ -145,3 +148,71 @@ ggplot(meta, aes(x = seurat_clusters, y = monocle3_pseudotime, fill = sample)) +
   labs(title = "Pseudotime distribution by cluster and sample",
        x = "Cluster", y = "Pseudotime") +
   scale_fill_viridis_d(option = "C")
+
+# deg_ids plot into modules
+integ1 <- subset(integ, cells = fusiform)
+
+cds <- as.cell_data_set(integ1)
+cds <- cluster_cells(cds, resolution = 1e-3)
+cds <- learn_graph(cds, use_partition = TRUE)
+cds <- order_cells(cds, reduction_method = "UMAP")
+
+cds$monocle3_pseudotime <- pseudotime(cds)
+integ1$monocle3_pseudotime <- cds$monocle3_pseudotime
+save_monocle_objects(cds, "data/SeuratOut/fusiform-16Trajec/cds/")
+
+cds@colData$seurat_clusters <- integ1$seurat_clusters[colnames(cds)]
+cds_graph_test_results <- graph_test(cds, neighbor_graph = "principal_graph", 
+                                     cores = 8)
+
+deg_ids <- rownames(subset(cds_graph_test_results, q_value < 0.01))
+# deg_ids <- readLines("data/SeuratOut/fusiform-16Trajec/pseudotimeDeg0.01q_1.txt")
+# cds <- readRDS("~/shruti/SNRIII/data/SeuratOut/fusiform-16Trajec/cds/cds_object.rds")
+
+cds_subset <- cds[deg_ids, ]
+cds_subset <- preprocess_cds(cds_subset, method = "PCA")
+cds_subset <- reduce_dimension(cds_subset, reduction_method = "UMAP")
+cds_subset <- cluster_cells(cds_subset, reduction_method = "UMAP")
+
+cell_group_df <- tibble::tibble(cell = rownames(colData(cds_subset)),
+                                cell_group = cds_subset@colData$seurat_clusters[colnames(cds_subset)])
+gene_module_df <- find_gene_modules(cds_subset, resolution = 0.001, random_seed = 42)
+write.table(gene_module_df, "data/SeuratOut/fusiform-16Trajec/gene_modules.txt",
+            sep = "\t", row.names = FALSE, quote = FALSE)
+
+agg_mat <- aggregate_gene_expression(cds_subset, gene_module_df, cell_group_df)
+row.names(agg_mat) <- stringr::str_c("Module ", row.names(agg_mat))
+colnames(agg_mat) <- stringr::str_c("Cluster ", colnames(agg_mat))
+
+pheatmap::pheatmap(agg_mat, cluster_rows = T, cluster_cols = T, scale = "column",
+                   clustering_method = "ward.D2", fontsize = 6, color = viridis(50))
+
+# heatmap of top genes
+expr_matrix <- exprs(cds_subset)
+cluster_info <- colData(cds_subset)$seurat_clusters
+
+cluster_levels <- unique(cluster_info)
+avg_expr_by_cluster <- sapply(cluster_levels, function(cluster) {
+  cells_in_cluster <- names(cluster_info)[cluster_info == cluster]
+  rowMeans(expr_matrix[, cells_in_cluster, drop = FALSE])
+})
+
+avg_expr_by_cluster <- as.data.frame(avg_expr_by_cluster)
+colnames(avg_expr_by_cluster) <- paste0("Cluster_", cluster_levels)
+
+top_genes <- gene_module_df %>% group_by(module) %>%
+  group_map(~ {genes <- .x$id
+  gene_avgs <- rowMeans(avg_expr_by_cluster[genes, , drop = FALSE])
+  top_genes <- names(sort(gene_avgs, decreasing = TRUE))[1:min(10, length(gene_avgs))]
+  return(top_genes)}) %>% unlist()
+
+heatmap_matrix <- avg_expr_by_cluster[top_genes, ]
+scaled_matrix <- t(scale(t(heatmap_matrix)))
+
+desired_order <- c("Cluster_14", "Cluster_1", "Cluster_10", "Cluster_4",
+                   "Cluster_15", "Cluster_6", "Cluster_17")
+ordered_matrix <- scaled_matrix[, desired_order]
+
+pheatmap(ordered_matrix, scale ="row", cluster_rows = T, cluster_cols = F,
+         show_rownames = T, clustering_method = "ward.D2", fontsize = 2,
+         color = viridis(100))

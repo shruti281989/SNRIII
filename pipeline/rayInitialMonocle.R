@@ -55,7 +55,7 @@ ggplot(data.pseudo, aes(x = monocle3_pseudotime, y = seurat_clusters,
                         fill = seurat_clusters)) +
   geom_density_ridges(scale = 1.2, rel_min_height = 0.01, alpha = 0.8) +
   scale_fill_viridis_d(option = "C") + theme_classic() +
-  labs(title = "Pseudotime distribution across fusiform clusters", 
+  labs(title = "Pseudotime distribution across clusters", 
        x = "Pseudotime", y = "Cluster") + theme(legend.position = "none")
 
 cds_graph_test_results <- graph_test(cds, neighbor_graph = "principal_graph",
