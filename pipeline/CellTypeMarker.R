@@ -6,7 +6,6 @@ library(ggplot2)
 library(here)
 library(viridis)
 library(scCustomize)
-# library(qs)
 
 set.seed(42)
 
@@ -35,8 +34,6 @@ ribosomal <- read.table("~/shruti/SNR-u2023011/analysis/markers/Ribo_gene_table.
                         sep = '\t',header=F)
 protoplasting <- read.table("~/shruti/SNR-u2023011/analysis/markers/pplast.txt",
                             sep = '\t',header=F)
-degSNR <- read.table("~/shruti/SNR-u2023011/analysis/snrIII/dnStrm/degSNRIII.txt",
-                     sep = '\t',header=T)
 degSNRTime <- read.csv("~/shruti/SNR-u2023011/analysis/snrIII/dnStrm/degSNRTime.csv",
                        header=T)
 
@@ -369,7 +366,7 @@ RayParen <- c("Potra2n2c5467","Potra2n2c4942","Potra2n2c4144","Potra2n155s34744"
 ligMiko <- c("Potra2n19c33285","Potra2n1c351","Potra2n10c20411","Potra2n9c19275","Potra2n9c19246","Potra2n8c17885","Potra2n8c16946","Potra2n7c16495","Potra2n6c15127","Potra2n6c14201","Potra2n5c11765","Potra2n3c7945","Potra2n3c6847","Potra2n3c6817","Potra2n3c6783","Potra2n1c307","Potra2n1c2649","Potra2n1c1541","Potra2n16c30091","Potra2n16c29966","Potra2n13c24959","Potra2n12c23766")
 
 #5.13. O-Carillo et al cell death genes
-dead <- c("Potra2n4c10301","Potra2n16c29448","Potra2n10c21346","Potra2n1c3148","Potra2n4c8470")
+death <- c("Potra2n4c10301","Potra2n16c29448","Potra2n10c21346","Potra2n1c3148","Potra2n4c8470")
 
 #5.14. ERF 81-88
 erf <- c("Potra2n15c29002","Potra2n1c788","Potra2n2c4898","Potra2n3c7265","Potra2n13c24952","Potra2n14c27085","Potra2n19c33278","Potra2n12c23983")
@@ -387,4 +384,9 @@ issa <- c("Potra2n4c8952","Potra2n5c10536","Potra2n2c6410","Potra2n14c27598", "P
 larish <- c("Potra2n13c26124","Potra2n15c28479","Potra2n13c26252","Potra2n3c7481","Potra2n10c21640","Potra2n5c11320","Potra2n10c20915","Potra2n8c17983","Potra2n2c5606","Potra2n4c9696","Potra2n9c19920","Potra2n18c32485","Potra2n8c18284","Potra2n10c22245","Potra2n17c31716","Potra2n19c33927","Potra2n16c29957","Potra2n2c4577","Potra2n10c21132","Potra2n1c1290","Potra2n17c30652","Potra2n18c32561","Potra2n4c9927","Potra2n15c28361","Potra2n10c20361","Potra2n5c12183","Potra2n8c18507","Potra2n18c32183","Potra2n13c26115","Potra2n8c18472","Potra2n8c17720","Potra2n15c28125","Potra2n7c15917","Potra2n5c12157","Potra2n8c17568","Potra2n7c15596","Potra2n10c21949","Potra2n14c27777","Potra2n14c27633")
 
 # 5.18 snRNA Seq vegetative shoot apex from Conde et al., 2022
-condeClst <- c("Potra2n10c20548","Potra2n10c20676","Potra2n10c20892","Potra2n10c21070","Potra2n10c21478","Potra2n10c21634","Potra2n10c22054","Potra2n12c24397","Potra2n12c24714","Potra2n14c26506","Potra2n14c27625","Potra2n15c27961","Potra2n15c29012","Potra2n16c29503","Potra2n16c29820","Potra2n17c30845","Potra2n18c32645","Potra2n18c32648","Potra2n18c32756","Potra2n18c33124","Potra2n1c1621","Potra2n1c2062","Potra2n1c2670","Potra2n1c534","Potra2n1c923","Potra2n2c4945","Potra2n2c5108","Potra2n2c5386","Potra2n2c5448","Potra2n2c5872","Potra2n2c5894","Potra2n2c6106","Potra2n3c7548","Potra2n3c7649","Potra2n3c8006","Potra2n4c10284","Potra2n4c10286","Potra2n4c10286","Potra2n4c8449","Potra2n4c9001","Potra2n5c12554","Potra2n6c13216","Potra2n6c13402","Potra2n7c16584","Potra2n8c17128")
+condeClst <- c("Potra2n10c20548","Potra2n10c20676","Potra2n10c20892",
+               "Potra2n10c21070","Potra2n10c21478","Potra2n10c21634",
+               "Potra2n10c22054","Potra2n12c24397","Potra2n12c24714",
+               "Potra2n14c26506","Potra2n14c27625","Potra2n15c27961",
+               "Potra2n15c29012","Potra2n16c29503","Potra2n16c29820",
+               "Potra2n17c30845","Potra2n18c32645","Potra2n18c32648","Potra2n18c32756","Potra2n18c33124","Potra2n1c1621","Potra2n1c2062","Potra2n1c2670","Potra2n1c534","Potra2n1c923","Potra2n2c4945","Potra2n2c5108","Potra2n2c5386","Potra2n2c5448","Potra2n2c5872","Potra2n2c5894","Potra2n2c6106","Potra2n3c7548","Potra2n3c7649","Potra2n3c8006","Potra2n4c10284","Potra2n4c10286","Potra2n4c10286","Potra2n4c8449","Potra2n4c9001","Potra2n5c12554","Potra2n6c13216","Potra2n6c13402","Potra2n7c16584","Potra2n8c17128")

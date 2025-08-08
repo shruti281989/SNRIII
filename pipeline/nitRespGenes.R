@@ -33,9 +33,10 @@ protoplasting <- read.table("~/shruti/SNR-u2023011/analysis/markers/pplast.txt",
                             sep = '\t',header=F)
 degWilcox <- read.table("~/shruti/SNRIII/data/SeuratOut/output/markerWilcox_lfc1_fdr0.01_pct0.5.txt",
                         header = T)
-degEdgeR <- read.table("~/shruti/SNRIII/data/SeuratOut/output/edgeR_lfc1_fdr0.01.txt",
-                     header = T, sep = '\t')
 nit <- read_excel("~/shruti/SNRIII/data/SeuratOut/bulkDegvsScDeg.xlsx", sheet = 2)
+
+degTime <- read.table("~/shruti/SNRIII/data/degTableS1E.txt",
+                       header = T, sep = '\t')
 
 #Cluster wise heatmap: scale the data first: 
 integ <- ScaleData(integ, features = rownames(integ))
@@ -86,14 +87,12 @@ DotPlot(integ, split.by = "sample", cols = c("#fde623ff", "#420051ff"),
 
 # Split Violin 
 plots <- VlnPlot(integ, features = "Potra2n1c723", cols = c("blue", "red"),
-                 split.by = "sample", pt.size = 0, combine = FALSE, 
-                 split.plot = TRUE)
+                 split.by = "sample", pt.size = 0, combine = FALSE, split.plot = T)
 wrap_plots(plots = plots, ncol = 1)
 
 # Stacked violin
-a <- VlnPlot(integ, features =c("Potra2n1c723","Potra2n16c29671"), stack = TRUE,
-             sort = TRUE) +
-  theme(legend.position = "none") + ggtitle("nlp7fam")
+a <- VlnPlot(integ, features =c("Potra2n1c723","Potra2n16c29671"), stack = T,
+             sort = T) + theme(legend.position = "none") + ggtitle("nlp7fam")
 plot_grid(a)
 
 # png("lac_fam.png")
@@ -132,11 +131,15 @@ degTimeSeries <- read.csv("~/shruti/SNR-u2023011/analysis/snrIII/dnStrm/degSNRTi
 features_to_plot <- degTimeSeries %>% 
   filter(`level.in.KNO3` == "Upregulated" & timepoint == "KNO3_2h_vs_KCL_2h") %>%
   pull(X)
+features_to_plot <- readLines("deg2hTF.txt")
+
 # dn2h <- degTimeSeries %>% 
 #   filter(`level.in.KNO3` == "Downregulated" & timepoint == "KNO3_2h_vs_KCL_2h") %>% 
 #   pull(X)
+
 integ <- ScaleData(integ, features = rownames(integ), assay = "RNA")
 avgexp = AverageExpression(subset(integ, subset = sample =="ctrl"), assay="RNA",
+                           features = features_to_plot,
                            return.seurat = T, group.by = 'integrated_snn_res.0.6')
 
 DoHeatmap(avgexp, features = features_to_plot,angle = 0) + guides(color="none") +
@@ -159,7 +162,6 @@ features_to_plot <- features_to_plot %>% filter(status=="up in kno" & FDR <0.05)
   pull("GeneID")
 
 features_to_plot <- nit$Potra
-features_to_plot <- c("Potra2n5c11320","Potra2n3c7718")
 
 # Calculate average expression for each sample's clusters
 average_expression_list <- lapply(sample_list, function(x) {

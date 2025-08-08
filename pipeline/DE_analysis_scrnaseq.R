@@ -35,10 +35,11 @@ suppressPackageStartupMessages({
   library(gridExtra)
   library(knitr)
   library(limma)
+  library(here)
 })
 
 seurat_integrated  <- readRDS("~/shruti/SNRIII/data/SeuratOut/integ.rds")
-setwd("~/shruti/SNRIII/data/SeuratOut/output/afterDbltRemoval/pseudobulkDEClustWiseAftrDblt/")
+setwd("data/SeuratOut/output/afterDbltRemoval/")
 
 # Extract raw counts and metadata to create SingleCellExperiment object
 counts <- GetAssayData(object = seurat_integrated, slot = "counts", assay="RNA")
@@ -458,7 +459,7 @@ pheatmap(tres2,
          clustering_method = "ward.D2",
          border_color = NA)
 
-# Part 3: use seurat findmarkers to get the DEG genes 
+# Part 3: use seurat findmarkers to get the DEG genes for the manuscript
 integ <- readRDS("~/shruti/SNRIII/data/SeuratOut/integ.rds")
 
 DefaultAssay(integ) <- "RNA"
@@ -489,7 +490,7 @@ filtered_markers_df <- do.call(rbind, filtered.marker)
 write.table(filtered_markers_df, "data/SeuratOut/output/markerWilcox_lfc1_fdr0.01_pct0.5.txt", 
             row.names = F,col.names = T, quote = F, sep="\t")
 
-write.table(filtered_markers_df, "data/SeuratOut/output/markerWilcox_lfc1_fdr0.01_pct0.1.txt", 
+write.table(filtered_markers_df, "../../output/afterDbltRemoval/markerWilcox_lfc1_fdr0.01_pct0.1.txt", 
             row.names = F,col.names = T, quote = F, sep="\t")
 
 
