@@ -248,13 +248,28 @@ DefaultAssay(integ) <- "RNA"
 sample_list <- SplitObject(integ, split.by = "sample")
 rm(integ)
 
-features_to_plot <- read.table("~/shruti/SNRIII/data/SeuratOut/degTableS2F.txt",
+deg <- read.table("~/shruti/SNRIII/data/SeuratOut/degTableS2F.txt",
                                header = TRUE, fill = TRUE, sep = "\t", quote = "")
-features_to_plot <- features_to_plot %>% 
+features_to_plot <- deg %>% 
   filter(Level == "Upregulated", Cluster %in% c("4", "5", "7", "12", "15", "17", "18")) %>%
   pull("GeneId")
-
 clusters_of_interest <- c("4", "5", "7", "12", "15", "17", "18")
+
+# for fiber Up and expansion
+fibUp <- deg %>% 
+  filter(Level == "Upregulated", Cluster %in% c("1", "4", "10", "14", "15")) %>%
+  pull("GeneId")
+clusters_of_interest <- c("1", "4", "10", "14", "15")
+expsn <- readLines("../../expansion.txt")
+features_to_plot <- expsn[expsn %in% fibUp]
+
+# for vessel Up and expansion
+vesUp <- deg %>% 
+  filter(Level == "Upregulated", Cluster %in% c("6", "14", "17")) %>%
+  pull("GeneId")
+clusters_of_interest <- c("6", "14", "17")
+expsn <- readLines("../../expansion.txt")
+features_to_plot <- expsn[expsn %in% vesUp]
 
 # Subset samples to desired clusters and calculate average expression
 avg_expr_list <- lapply(sample_list, function(x) {
@@ -290,7 +305,7 @@ ordered_genes <- rownames(ref_mat)[gene_order]
 
 heatmap_data <- heatmap_data %>% filter(Gene %in% ordered_genes)
 
-# Plot heatmaps using the same gene order
+# Plot heatmap using the same gene order
 for (sample in unique(heatmap_data$Sample)) {
   mat <- heatmap_data %>%
     filter(Sample == sample) %>%
@@ -319,7 +334,7 @@ for (sample in unique(heatmap_data$Sample)) {
   heatmap.2(mat, scale = "none", col = viridis(20), trace = "none",
             margins = c(8, 8), dendrogram = "none", Rowv = FALSE, Colv = FALSE,
             key = TRUE, key.title = "Scaled Expression", key.xlab = "Expression",
-            main = paste("Heatmap:", sample), cexCol = 1, cexRow = 0.5)
+            main = paste("Heatmap:", sample), cexCol = 1, cexRow = 0.2)
   dev.off()
 }
 

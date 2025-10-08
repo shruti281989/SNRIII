@@ -4,6 +4,7 @@ library(here)
 library(viridis)
 
 # my own data in the manuscript
+setwd("data/SeuratOut/output/afterDbltRemoval/")
 df <- read.table("GODeg.txt", sep = "\t", header = T)
 df$Cluster.number <- factor(df$Cluster.number, levels = unique(df$Cluster.number))
 
@@ -38,6 +39,7 @@ dir.create("GO_tables_Wilcoxfdr0.01", showWarnings = FALSE)
 
 deg_data <- read.table("markerWilcox_lfc1_fdr0.01_pct0.1.txt", header = T)
 deg_data <- deg_data %>% mutate(Direction = ifelse(avg_log2FC > 0, "up", "down"))
+
 
 enrichment_results <- list()
 summary_table <- data.frame()
@@ -110,7 +112,6 @@ extractEnrichmentResults <- function(enrichment,
   return(plot_list)
 }
 
-# plots
 extractEnrichmentResults(enrichment_results)
 
 df <- read.csv("GO_tables_Wilcoxfdr0.01/GO_enrichment_summary.csv")
@@ -121,4 +122,38 @@ ggplot(df, aes(x = Cluster, y = Term, size = Significant, color = FDR,
   scale_size(range = c(2, 10)) + theme_bw() +
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
   labs(size = "Gene Count", color = "FDR", shape = "Regulation")
+
+# look at the fiber only
+fiber <- deg_data %>% 
+  filter(cluster %in% c("Cluster_1", "Cluster_4", "Cluster_10", "Cluster_15"), Direction =="down") %>% 
+  pull(gene) %>% 
+  unique()
+
+fiber <- deg_data %>% 
+  filter(cluster %in% c("Cluster_18", "Cluster_5", "Cluster_7")) %>% 
+  pull(gene) %>% 
+  unique()
+
+if (length(fiber) >= 10) {
+  gores <- topGO(set = fiber, background = background, annotation = goannot,
+                 ontology = c("BP", "MF", "CC"), algorithm = "parentchild",
+                 statistic = "fisher", p.adjust = "fdr", alpha = "0.05")
+  
+  summary_table <- data.frame()
+  
+  for (ont in names(gores)) {
+    tab <- gores[[ont]]
+    if (!is.null(tab) && nrow(tab) > 0) {
+      tab$Cluster <- "fiber"
+      tab$Direction <- "combined"
+      tab$Ontology <- ont
+      summary_table <- bind_rows(summary_table, tab)
+    }
+  }
+  
+  write.csv(summary_table, "GO_Ray.csv", row.names = FALSE) 
+  
+  extractEnrichmentResults(list(fiber = list(combined = gores)))
+}
+
 
