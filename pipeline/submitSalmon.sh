@@ -5,7 +5,7 @@ set -eu
 export SINGULARITY_BINDPATH="/mnt:/mnt"
 sings=$(realpath ../../single_cell_analysis_poplar/singularity/salmon-1.6.0.simg)
 
-# in=$(realpath ../data/raw)
+#  Run for each sample separately
 # in=$(realpath ../data/raw/kcl.fq.gz)
 in=$(realpath ../data/raw/kno.fq.gz)
 inx=$(realpath ../../single_cell_analysis_poplar/reference/indices/salmon1.6.0/)

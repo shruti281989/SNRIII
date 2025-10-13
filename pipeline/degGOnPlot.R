@@ -1,49 +1,48 @@
-library(tidyverse)
-library(ggplot2)
-library(here)
-library(viridis)
-
-# my own data in the manuscript
 setwd("data/SeuratOut/output/afterDbltRemoval/")
-df <- read.table("GODeg.txt", sep = "\t", header = T)
-df$Cluster.number <- factor(df$Cluster.number, levels = unique(df$Cluster.number))
-
-ggplot(df, aes(x = Cluster.number, y = Description, size = Significant,
-               color = q.value, shape = Status)) + geom_point(alpha = 0.8) +
-  scale_color_viridis_c(direction = -1, end = 0.9) + 
-  scale_size(range = c(2, 10)) + theme_bw() +
-  theme(text=element_text(family="Arial"))+
-  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-  labs(size = "Gene Count", color = "q-value", shape = "Regulation")
-
-# go in all cellular data
-df <- read.table("GOall.txt", sep = "\t", header = T)
-df <- df %>% filter(Category == "BP")
-df$Cluster.number <- factor(df$Cluster.number, levels = unique(df$Cluster.number))
-
-ggplot(df, aes(x = Cluster.number, y = Term, size = Significant,
-               color = False.Discovery.Rate)) + 
-  geom_point(alpha = 0.8) + scale_color_viridis_c(direction = -1, end = 0.9) + 
-  scale_size(range = c(2, 10)) + theme_bw() +
-  theme(text=element_text(family="Arial"))+
-  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-  labs(size = "Gene Count", color = "False Discovery Rate")
-
-# Go enrichmnent
+#' 
+#' GO enrichment for DEGs per sample
+#'
+set.seed(42)
+suppressPackageStartupMessages({
+  library(dplyr)
+  library(Seurat)
+  library(patchwork)
+  library(tidyverse)
+  library(RCurl)
+  library(cowplot)
+  library(viridis)
+  library(qs)
+  library(magrittr)
+  library(Matrix)
+  library(purrr)
+  library(reshape2)
+  library(S4Vectors)
+  library(tibble)
+  library(ComplexHeatmap)
+  library(pheatmap)
+  library(scales)
+  library(ggplot2)
+  library(here)
+  library(RColorBrewer)
+})
+#' 
+#' 
 suppressMessages(source("~/shruti/SNRIII/UPSCb-common/src/R/topGoUtilities.R"))
 goannot <- prepAnnot(mapping = "/mnt/reference/Populus-tremula/v2.2/gopher/gene_to_go.tsv")
 background <- readRDS("/mnt/ada/projects/aspseq/htuominen/SNR-results/ctrl_bg.rds")
-
+#'
+#'
 dir.create("GO_plots_Wilcoxfdr0.01", showWarnings = FALSE)
 dir.create("GO_tables_Wilcoxfdr0.01", showWarnings = FALSE)
-
+#'
+#'
 deg_data <- read.table("markerWilcox_lfc1_fdr0.01_pct0.1.txt", header = T)
 deg_data <- deg_data %>% mutate(Direction = ifelse(avg_log2FC > 0, "up", "down"))
-
-
+#'
+#'
 enrichment_results <- list()
 summary_table <- data.frame()
-
+#'
 for (cl in unique(deg_data$cluster)) {
   for (dir in c("up", "down")) {
     genes <- deg_data %>% filter(cluster == cl, Direction == dir) %>% pull(gene)
@@ -67,10 +66,12 @@ for (cl in unique(deg_data$cluster)) {
     }
   }
 }
-
+#'
+#'
 write.csv(summary_table, "GO_tables_Wilcoxfdr0.01/GO_enrichment_summary.csv", 
           row.names = F)
-
+#'
+#'
 extractEnrichmentResults <- function(enrichment,
                                      go.namespace = c("BP", "CC", "MF"),
                                      save_plots = TRUE,
@@ -111,9 +112,10 @@ extractEnrichmentResults <- function(enrichment,
   
   return(plot_list)
 }
-
+#'
+#'
 extractEnrichmentResults(enrichment_results)
-
+#'
 df <- read.csv("GO_tables_Wilcoxfdr0.01/GO_enrichment_summary.csv")
 df <- df %>% filter(FDR < 0.05)
 ggplot(df, aes(x = Cluster, y = Term, size = Significant, color = FDR, 
@@ -122,38 +124,16 @@ ggplot(df, aes(x = Cluster, y = Term, size = Significant, color = FDR,
   scale_size(range = c(2, 10)) + theme_bw() +
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
   labs(size = "Gene Count", color = "FDR", shape = "Regulation")
-
-# look at the fiber only
-fiber <- deg_data %>% 
-  filter(cluster %in% c("Cluster_1", "Cluster_4", "Cluster_10", "Cluster_15"), Direction =="down") %>% 
-  pull(gene) %>% 
-  unique()
-
-fiber <- deg_data %>% 
-  filter(cluster %in% c("Cluster_18", "Cluster_5", "Cluster_7")) %>% 
-  pull(gene) %>% 
-  unique()
-
-if (length(fiber) >= 10) {
-  gores <- topGO(set = fiber, background = background, annotation = goannot,
-                 ontology = c("BP", "MF", "CC"), algorithm = "parentchild",
-                 statistic = "fisher", p.adjust = "fdr", alpha = "0.05")
-  
-  summary_table <- data.frame()
-  
-  for (ont in names(gores)) {
-    tab <- gores[[ont]]
-    if (!is.null(tab) && nrow(tab) > 0) {
-      tab$Cluster <- "fiber"
-      tab$Direction <- "combined"
-      tab$Ontology <- ont
-      summary_table <- bind_rows(summary_table, tab)
-    }
-  }
-  
-  write.csv(summary_table, "GO_Ray.csv", row.names = FALSE) 
-  
-  extractEnrichmentResults(list(fiber = list(combined = gores)))
-}
-
-
+#'
+#'
+#' GO plots in DEGs from scRNASeq data
+#' 
+df <- read.table("GODeg.txt", sep = "\t", header = T)
+df$Cluster.number <- factor(df$Cluster.number, levels = unique(df$Cluster.number))
+ggplot(df, aes(x = Cluster.number, y = Description, size = Significant,
+               color = q.value, shape = Status)) + geom_point(alpha = 0.8) +
+  scale_color_viridis_c(direction = -1, end = 0.9) + 
+  scale_size(range = c(2, 10)) + theme_bw() +
+  theme(text=element_text(family="Arial"))+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  labs(size = "Gene Count", color = "q-value", shape = "Regulation")

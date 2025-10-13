@@ -6,7 +6,6 @@ suppressPackageStartupMessages({
   library(ggplot2)
   library(viridis)
   library(readxl)
-  # library(qs)
   library(gplots)
 })
 
