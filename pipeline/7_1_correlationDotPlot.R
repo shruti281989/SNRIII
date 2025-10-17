@@ -345,4 +345,3 @@ palette <- c("violet","orange","wheat","green","grey","blue","pink", "aquamarine
              "sandybrown","peru","palevioletred", "peru","red")
 color <- palette[sort(match(unique(split_seurat$ctrl$exprAll.ID.P),order))]
 DimPlot(split_seurat$ctrl, group.by="exprAll.ID.P", cols=color, label = TRUE)+NoAxes()
-

@@ -315,8 +315,8 @@ DimPlot(seurat_phase, reduction = "pca", split.by = "Phase")
 #' ‘regress out’ heterogeneity associated with cell cycle stage
 #' It is recommended to use new normalization- SCTransform
 #' 
-#' There seem no grouping by cell cycle in the PCA, 
-#' so I decided not to regress out cell cycle variation
+#' There seem no grouping by cell cycle in the PCA, still I regressed the 
+#' variation due to cell cycle
 #' 
 #' Adjust the memory first
 options(future.globals.maxSize = 4000 * 1024^2)
@@ -325,9 +325,9 @@ split_seurat <- SplitObject(pop.singlets, split.by = "sample")
 split_seurat <- split_seurat[c("ctrl", "kno")]
 for (i in 1:length(split_seurat)) {
   split_seurat[[i]] <- NormalizeData(split_seurat[[i]], verbose = TRUE)
-  # split_seurat[[i]] <- CellCycleScoring(split_seurat[[i]], 
-  #                                       g2m.features=c(g2phase,mphase), 
-  #                                       s.features=sphase)
+  split_seurat[[i]] <- CellCycleScoring(split_seurat[[i]],
+                                        g2m.features=c(g2phase,mphase),
+                                        s.features=sphase)
   split_seurat[[i]] <- FindVariableFeatures(split_seurat[[i]], 
                                             selection.method = "vst", 
                                             nfeatures = 2000)
@@ -337,12 +337,13 @@ for (i in 1:length(split_seurat)) {
 }
 #' 
 #' NOTE: 
+#' 
 #' (i). By default, after normalizing, adjusting the variance, and regressing, 
 #' SCTransform will rank genes by residual variance and output 3000 most variant genes.
 #' If the dataset has larger cell numbers, then adjust it to higher value
 #' using variable.features.n argument.
-#' (ii). can use seurat_phase object here instead of pop-singlets data
-#' (iii). can also use regress out protoplasting genes from the dataset 
+#' 
+#' (ii). We can also regress out protoplasting genes from the dataset (optional)
 #' using Yadav_pp gene sets in CellTypeMarker.R file but I have not done this
 #' 
 #' 
@@ -384,24 +385,7 @@ seurat_integrated <- FindClusters(object = seurat_integrated,
                                   resolution = c(0.4, 0.6, 0.8, 1.0, 1.4))
 #'
 seurat_integrated@meta.data %>% View()
-#' Remove useless metadata in the final R object (optional)
-#' log10GenesperUMI,nUMI,nGene, 
-# seurat_integrated$nUMI <- NULL
-# seurat_integrated$nGene <- NULL
-# seurat_integrated$log10GenesPerUMI <- NULL
-# seurat_integrated$RNA_snn_res.0.1 <- NULL
-# seurat_integrated$seurat_clusters <- NULL
-# seurat_integrated$pANN_0.25_0.26_4046 <- NULL
-# seurat_integrated$pANN_0.25_0.3_3879 <- NULL
-# seurat_integrated$doublet_finder <- NULL
-# seurat_integrated$S.Score <- NULL
-# seurat_integrated$G2M.Score <- NULL
-# seurat_integrated$integrated_snn_res.0.4 <- NULL
-# seurat_integrated$integrated_snn_res.0.8 <- NULL
-# seurat_integrated$integrated_snn_res.1.4 <- NULL
-# seurat_integrated$integrated_snn_res.1 <- NULL
-# seurat_integrated$Phase <- NULL
-#'
+
 saveRDS(seurat_integrated, file ="data/SeuratOut/integ.rds")
 #'
 #'
@@ -427,6 +411,7 @@ DimPlot(seurat_integrated, reduction = "umap", split.by = "Phase", label = TRUE,
         label.size = 6)
 #'
 #' Extract identity and sample info to determine no. of cells per cluster per sample
+integ <- readRDS("~/shruti/SNRIII/data/SeuratOut/integ.rds")
 n_cells <- FetchData(integ, vars = c("ident")) %>% dplyr::count(ident) %>%
   tidyr::spread(ident, n)
 View(n_cells)
@@ -451,10 +436,9 @@ ctrl <- NormalizeData(ctrl, verbose = FALSE)
 #' 
 #' find and report markers cluster wise for the control sample only in Table S2
 #' 
-marker <- FindAllMarkers( integ, logfc.threshold = -Inf, 
-                                test.use = "wilcox", min.pct = 0.01,
-                                min.diff.pct = 0, only.pos = TRUE, 
-                                max.cells.per.ident = 20, assay = "RNA")
+marker <- FindAllMarkers( integ, logfc.threshold = -Inf, test.use = "wilcox", 
+                          min.pct = 0.01, min.diff.pct = 0, only.pos = T, 
+                          max.cells.per.ident = 20, assay = "RNA")
 saveRDS(marker, file = "~/shruti/SNR-u2023011/analysis/markers/ctrl_marker.rds")
 #' 
 background <- rownames(ctrl) # for GO background
@@ -503,6 +487,24 @@ write.table(conserved_markers, file = "output/afterDbltRemoval/cons_marker.txt",
 #' Create a new feature in the Seurat object to store the percentage information
 # integ$percentage_pplast <- percentage_matching_pp_genes
 #' 
+#' 
+#' Finally remove objects from integrated object for NCBI submission for the manuscript
+#' 
+integ <- readRDS("~/shruti/SNRIII/data/SeuratOut/integ.rds")
+DefaultAssay(integ) <- "RNA"
+integ@active.ident <- integ$integrated_snn_res.0.6
+DefaultAssay(integ) <- "RNA"
+integ$nUMI <- NULL
+integ$nGene <- NULL
+integ$type <- NULL
+integ$pANN_0.25_0.26_4046 <- NULL
+integ$pANN_0.25_0.3_3879 <- NULL
+integ$doublet_finder <- NULL
+integ$seurat_clusters <- NULL
+integ$RNA_snn_res.0.1 <- NULL
+saveRDS(integ, "data/SeuratOut/integDiffXyT89SNRIII.rds")
+#'
+#'
 #'
 #' Tutorials from the following sources were followed:
 #' https://hbctraining.github.io/scRNA-seq/lessons/04_SC_quality_control.html

@@ -9,20 +9,6 @@ library(scCustomize)
 
 set.seed(42)
 
-# remove objects from integrated object for the manuscript
-# integ <- readRDS("~/shruti/SNRIII/data/SeuratOut/integ.rds")
-# DefaultAssay(integ) <- "RNA"
-# integ@active.ident <- integ$integrated_snn_res.0.6
-# integ$nUMI <- NULL
-# integ$nGene <- NULL
-# integ$type <- NULL
-# integ$pANN_0.25_0.26_4046 <- NULL
-# integ$pANN_0.25_0.3_3879 <- NULL
-# integ$doublet_finder <- NULL
-# integ$seurat_clusters <- NULL
-# integ$RNA_snn_res.0.1 <- NULL
-# saveRDS(integ, "data/SeuratOut/integDiffXyT89SNRIII.rds")
-
 # Load markers
 selectedmarker <- read.table("~/shruti/SNR-u2023011/analysis/markers/selMarker.txt",
                              sep = '\t',header=TRUE)
