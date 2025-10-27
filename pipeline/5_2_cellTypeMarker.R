@@ -10,18 +10,18 @@ library(scCustomize)
 set.seed(42)
 
 # Load markers
-selectedmarker <- read.table("~/shruti/SNR-u2023011/analysis/markers/selMarker.txt",
-                             sep = '\t',header=TRUE)
+# selectedmarker <- read.table("~/shruti/SNR-u2023011/analysis/markers/selMarker.txt",
+                             # sep = '\t',header=TRUE)
 clustMarker <- read.table("~/shruti/SNR-u2023011/analysis/markers/clustMarker.txt",
                           sep = '\t',header=TRUE)
-ploidy <- read.table("~/shruti/SNR-u2023011/analysis/markers/endo_expPotra.txt",
-                     sep = '\t',header=TRUE)
-ribosomal <- read.table("~/shruti/SNR-u2023011/analysis/markers/Ribo_gene_table.txt",
-                        sep = '\t',header=F)
-protoplasting <- read.table("~/shruti/SNR-u2023011/analysis/markers/pplast.txt",
-                            sep = '\t',header=F)
-degSNRTime <- read.csv("~/shruti/SNR-u2023011/analysis/snrIII/dnStrm/degSNRTime.csv",
-                       header=T)
+# ploidy <- read.table("~/shruti/SNR-u2023011/analysis/markers/endo_expPotra.txt",
+#                      sep = '\t',header=TRUE)
+# ribosomal <- read.table("~/shruti/SNR-u2023011/analysis/markers/Ribo_gene_table.txt",
+#                         sep = '\t',header=F)
+# protoplasting <- read.table("~/shruti/SNR-u2023011/analysis/markers/pplast.txt",
+#                             sep = '\t',header=F)
+# degSNRTime <- read.csv("~/shruti/SNR-u2023011/analysis/snrIII/dnStrm/degSNRTime.csv",
+#                        header=T)
 
 # for label with own/AT annotation 
 clustMarker <- clustMarker[order(clustMarker$Cluster),]
@@ -36,15 +36,10 @@ names(markeranno) <- selectedmarker$GeneId
 integ <- readRDS("~/shruti/SNRIII/data/SeuratOut/integ.rds")
 DefaultAssay(integ) <- "RNA"
 
-# rename the clusters
-integ <- RenameIdents(
-  integ, "0" = "Unknown 0","1" = "Fiber Precursor 1", "2" = "Unknown 2",
-  "3" = "Unknown 3","4" = "Early Fiber 4", "5" = "Ray 5","6" = "Early Vessel 6",
-  "7" = "Ray 7","8" = "Unknown 8", "9" = "Unknown 9","10" = "Fiber Precursor 10",
-  "11" = "Unknown 11","12" = "Fiber 12","13" = "Unknown 13",
-  "14" = "Fusiform Initial 14", "15" = "Fiber 15",
-  "16" = "Ray/Fusiform Initial 16","17" = "Late Vessel 17","18" = "Ray 18",
-  "19" = "Phloem-like 19","20" = "Cambium 20")
+# To plot for one sample, split the object
+split_seurat <- SplitObject(integ, split.by = "sample")
+split_seurat <- split_seurat[c("ctrl", "kno")]
+# and plot using the object split_seurat$ctrl
 
 DimPlot_scCustom(split_seurat$ctrl, figure_plot = T,pt.size = 0.3, label=F,
                  colors_use = DiscretePalette_scCustomize(num_colors = 30,
@@ -55,69 +50,64 @@ DimPlot_scCustom(split_seurat$ctrl, figure_plot = T,pt.size = 0.3, label=F,
 # for heatmap, scaling is needed
 integ <- ScaleData(integ, features = rownames(integ), assay = "integrated")
 
-avgexp = AverageExpression(integ, assay="integrated", return.seurat = T, 
-                           group.by = 'integrated_snn_res.0.6')
+# avgexp = AverageExpression(integ, assay="integrated", return.seurat = T, 
+#                            group.by = 'integrated_snn_res.0.6')
+# 
+# DoHeatmap(avgexp, features = "Potra2n3c7095",angle = 0) + guides(color="none") +
+#   scale_fill_gradientn(colors = viridis(100)) + #inferno(100)
+#   theme(axis.text.y = element_text(size = 6))
+# 
+# DotPlot(subset(integ, subset = sample =="ctrl"),
+#         features = selectedmarker[selectedmarker$CellType == "fiber",]$GeneId,
+#         dot.scale = 10) + ylab(NULL)+coord_flip()+
+#   RotatedAxis() +scale_colour_viridis(option="viridis")+ xlab(NULL)+
+#   scale_x_discrete(labels = markeranno)
 
-DoHeatmap(avgexp, features = "Potra2n3c7095",angle = 0) + guides(color="none") +
-  scale_fill_gradientn(colors = viridis(100)) + #inferno(100)
-  theme(axis.text.y = element_text(size = 6))
-
-DotPlot(subset(integ, subset = sample =="ctrl"),
-        features = selectedmarker[selectedmarker$CellType == "fiber",]$GeneId,
-        dot.scale = 10) + ylab(NULL)+coord_flip()+
-  RotatedAxis() +scale_colour_viridis(option="viridis")+ xlab(NULL)+
-  scale_x_discrete(labels = markeranno)
-
-etc <- c(clustMarker[clustMarker$Cluster == "1",]$GeneId, 
-         clustMarker[clustMarker$Cluster == "2",]$GeneId, 
-         clustMarker[clustMarker$Cluster == "3",]$GeneId,
-         clustMarker[clustMarker$Cluster == "4",]$GeneId,
-         clustMarker[clustMarker$Cluster == "5",]$GeneId, 
-         clustMarker[clustMarker$Cluster == "6",]$GeneId,
-         clustMarker[clustMarker$Cluster == "7",]$GeneId,
-         clustMarker[clustMarker$Cluster == "8",]$GeneId,
-         clustMarker[clustMarker$Cluster == "9",]$GeneId,
-         clustMarker[clustMarker$Cluster == "10",]$GeneId,
-         clustMarker[clustMarker$Cluster == "11",]$GeneId,
-         clustMarker[clustMarker$Cluster == "12",]$GeneId,
-         clustMarker[clustMarker$Cluster == "13",]$GeneId,
-         clustMarker[clustMarker$Cluster == "14",]$GeneId,
-         clustMarker[clustMarker$Cluster == "15",]$GeneId,
-         clustMarker[clustMarker$Cluster == "16",]$GeneId,
-         clustMarker[clustMarker$Cluster == "17",]$GeneId,
-         clustMarker[clustMarker$Cluster == "18",]$GeneId,
-         clustMarker[clustMarker$Cluster == "19",]$GeneId,
-         clustMarker[clustMarker$Cluster == "20",]$GeneId)
+# etc <- c(clustMarker[clustMarker$Cluster == "1",]$GeneId, 
+#          clustMarker[clustMarker$Cluster == "2",]$GeneId, 
+#          clustMarker[clustMarker$Cluster == "3",]$GeneId,
+#          clustMarker[clustMarker$Cluster == "4",]$GeneId,
+#          clustMarker[clustMarker$Cluster == "5",]$GeneId, 
+#          clustMarker[clustMarker$Cluster == "6",]$GeneId,
+#          clustMarker[clustMarker$Cluster == "7",]$GeneId,
+#          clustMarker[clustMarker$Cluster == "8",]$GeneId,
+#          clustMarker[clustMarker$Cluster == "9",]$GeneId,
+#          clustMarker[clustMarker$Cluster == "10",]$GeneId,
+#          clustMarker[clustMarker$Cluster == "11",]$GeneId,
+#          clustMarker[clustMarker$Cluster == "12",]$GeneId,
+#          clustMarker[clustMarker$Cluster == "13",]$GeneId,
+#          clustMarker[clustMarker$Cluster == "14",]$GeneId,
+#          clustMarker[clustMarker$Cluster == "15",]$GeneId,
+#          clustMarker[clustMarker$Cluster == "16",]$GeneId,
+#          clustMarker[clustMarker$Cluster == "17",]$GeneId,
+#          clustMarker[clustMarker$Cluster == "18",]$GeneId,
+#          clustMarker[clustMarker$Cluster == "19",]$GeneId,
+#          clustMarker[clustMarker$Cluster == "20",]$GeneId)
        
-etc <- c(clustMarker[clustMarker$Cluster == "gus",]$GeneId,
-         clustMarker[clustMarker$Cluster == "SCW",]$GeneId,
-         clustMarker[clustMarker$Cluster == "all",]$GeneId)
+# etc <- c(clustMarker[clustMarker$Cluster == "gus",]$GeneId,
+#          clustMarker[clustMarker$Cluster == "SCW",]$GeneId,
+#          clustMarker[clustMarker$Cluster == "all",]$GeneId)
 
 # plotting function 1
-generateDotPlot <- function(data, features) {
-  png(file.path(here("~/shruti/SNR-u2023011/analysis/"),
-                paste0("features",".png")), res= 250,height = 4000, width = 3000)
-  
-  p <- DotPlot(integ, features = features,dot.scale = 10) +ylab(NULL)+
-    scale_colour_viridis(option="viridis")+RotatedAxis()+coord_flip()+
-    scale_x_discrete(labels = markeranno) + xlab(NULL)
-  
-  dev.off()
-}
-
-# In case to plot for one sample, split the object
-split_seurat <- SplitObject(integ, split.by = "sample")
-split_seurat <- split_seurat[c("ctrl", "kno")]
-# and plot using the object split_seurat$ctrl
+# generateDotPlot <- function(data, features) {
+#   png(file.path(here("~/shruti/SNR-u2023011/analysis/"),
+#                 paste0("features",".png")), res= 250,height = 4000, width = 3000)
+#   
+#   p <- DotPlot(integ, features = features,dot.scale = 10) +ylab(NULL)+
+#     scale_colour_viridis(option="viridis")+RotatedAxis()+coord_flip()+
+#     scale_x_discrete(labels = markeranno) + xlab(NULL)
+#   
+#   dev.off()
+# }
 
 # grep( "^mt-", rownames(seurat.object), value = T)
 #' Plot using different methods
-DotPlot(integ, features = selectedmarker[selectedmarker$CellType == "cambium", ]$GeneId,
-        cols ="RdBu", dot.scale = 10) + RotatedAxis()+ coord_flip()
-
-# special plots can be drawn with scCustomize
-DotPlot_scCustom(integ, features = nitRes[nitRes$Type == "NRT", ]$GeneId,
-                 colors_use = viridis_plasma_dark_high)
+# DotPlot(integ, features = selectedmarker[selectedmarker$CellType == "cambium", ]$GeneId,
+#         cols ="RdBu", dot.scale = 10) + RotatedAxis()+ coord_flip()
+# 
+# # special plots can be drawn with scCustomize
+# DotPlot_scCustom(integ, features = nitRes[nitRes$Type == "NRT", ]$GeneId,
+#                  colors_use = viridis_plasma_dark_high)
 
 # Split Violin 
 # plots <- VlnPlot(seurat_integrated, features = "Potra2n15c29002", cols = c("blue", "red"),
@@ -138,27 +128,6 @@ DotPlot_scCustom(integ, features = nitRes[nitRes$Type == "NRT", ]$GeneId,
 #   print(DotPlot(seurat_phase, features = lac_fam)+RotatedAxis())}
 # dev.off()
 # 
-
-# highlight specific plots
-Cluster_Highlight_Plot(integ,
-                       cluster_name = c("Fiber Precursor 1", "Early Fiber","Fiber Precursor 2", "Fiber 2","Fiber 1"),
-                       highlight_color =c("pink", "violet","seagreen","firebrick","darkblue"),
-                       background_color = "lightgray")+NoAxes()
-
-Cluster_Highlight_Plot(integ, 
-                       cluster_name = c("Fusiform Initial", "Ray/Fusiform Initial", "Late Vessel","Early Vessel"),
-                       highlight_color =c("violet","seagreen","firebrick", "darkblue"),
-                       background_color = "lightgray")+NoAxes()
-
-Cluster_Highlight_Plot(integ, 
-                       cluster_name = c("Ray 5", "Ray 7", "Ray 18", "Phloem like","Cambium"),
-                       highlight_color =c("orange","seagreen","firebrick", "darkblue", "violet"),
-                       background_color = "lightgray")+NoAxes()
-
-Cluster_Highlight_Plot(integ, 
-                       cluster_name = c("Unknown 0", "Unknown 2", "Unknown 3", "Unknown 8","Unknown 9", "Unknown 11","Unknown 13"),
-                       highlight_color =c("pink","seagreen","firebrick", "darkblue", "violet", "orange", "turquoise"),
-                       background_color = "lightgray")+NoAxes()
 
 DimPlot_scCustom(integ, figure_plot = TRUE,
                  colors_use = viridis_plasma_dark_high)
