@@ -1,4 +1,4 @@
-setwd(data/SeuratOut)
+setwd("/mnt/picea/home/schoudhary/shruti/SNRIII")
 set.seed(42)
 suppressPackageStartupMessages({
   library(Seurat)
@@ -12,7 +12,7 @@ suppressPackageStartupMessages({
   library(viridis)
 })
 
-integ <- readRDS("~/shruti/SNRIII/data/SeuratOut/integ.rds")
+integ <- readRDS("data/SeuratOut/integ.rds")
 Idents(integ) <- "integrated_snn_res.0.6"
 integ$seurat_clusters <- integ@active.ident
 DefaultAssay(integ) <- "RNA"
@@ -53,10 +53,10 @@ ggplot(data.pseudo, aes(monocle3_pseudotime,
 
 cds_graph_test_results <- graph_test(cds, neighbor_graph = "principal_graph",
                                      cores = 8)
-saveRDS(cds_graph_test_results, "vesTrajec/cdsVes_graph.rds")
+saveRDS(cds_graph_test_results, "data/SeuratOut/vesTrajec/cdsVes_graph.rds")
 
 deg_ids <- rownames(subset(cds_graph_test_results[order(cds_graph_test_results$morans_I, decreasing = TRUE),], q_value < 0.01))
-write.table(deg_ids,"vesTrajec/pseudotimeDeg0.01q.txt",
+write.table(deg_ids,"data/SeuratOut/vesTrajec/pseudotimeDeg0.01q.txt",
             sep="\t", row.names = F,col.names = F, quote = F)
 
 plot_cells(cds, color_cells_by = "pseudotime", label_cell_groups=FALSE, 

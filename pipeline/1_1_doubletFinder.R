@@ -2,6 +2,7 @@
 #' https://nbisweden.github.io/workshop-scRNAseq/labs/compiled/seurat/seurat_01_qc.html#Predict_doublets
 #'
 #' Load packages
+setwd("/mnt/picea/home/schoudhary/shruti/SNRIII/")
 set.seed(42)
 suppressPackageStartupMessages({
   library(dplyr)
@@ -22,16 +23,13 @@ suppressPackageStartupMessages({
   library(pheatmap)
   library(scales)
   library(ggplot2)
-  library(here)
   library(parallel)
   library(DoubletFinder)
 })
 #'
-setwd("~/mnt/picea/home/schoudhary/shruti/SNRIII/data/SeuratOut/")
-#'
 #' Run doublet finder on the filtered and merged data
 #'
-load("/mnt/picea/home/schoudhary/shruti/SNRIII/data/SeuratOut/filt0.9_seurat.RData")
+load("data/SeuratOut/filt0.9_seurat.RData")
 pop.split <- SplitObject(filtered_seurat, split.by = "sample") 
 #'
 #' Chen et al, 2021 used DoubletFinder tool with following criteria: 
@@ -90,7 +88,7 @@ for (i in 1:length(pop.split)) {
   colnames(metadata)[13] <- "doublet_finder"
   pop.sample@meta.data <- metadata 
   
-  # subset and save
+  # subset
   pop.singlets <- subset(pop.sample, doublet_finder == "Singlet")
   pop.split[[i]] <- pop.singlets
   remove(pop.singlets)

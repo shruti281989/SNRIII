@@ -1,3 +1,5 @@
+setwd("/mnt/picea/home/schoudhary/shruti/SNRIII")
+
 library(svglite)
 library(monocle3)
 library(dplyr)
@@ -6,13 +8,14 @@ library(pheatmap)
 library(ggplot2)
 library(ggplot2)
 library(dplyr)
+library(here)
 
 # Module
 deg_ids <- readLines("data/SeuratOut/fibTrajec/pseudotimeDeg0.01q_1.txt")
-cds <- readRDS("~/shruti/SNRIII/data/SeuratOut/fibTrajec/cdsFib14/cds_object.rds")
+cds <- readRDS("data/SeuratOut/fibTrajec/cdsFib14/cds_object.rds")
 
 # deg_ids <- readLines("data/SeuratOut/fusiformVes/pseudotimeDeg0.01q.txt")
-# cds <- readRDS("~/shruti/SNRIII/data/SeuratOut/fusiformVes/cdsVes/cds_object.rds")
+# cds <- readRDS("data/SeuratOut/fusiformVes/cdsVes/cds_object.rds")
 
 cds_subset <- cds[deg_ids, ]
 cds_subset <- preprocess_cds(cds_subset, method = "PCA")

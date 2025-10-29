@@ -1,4 +1,4 @@
-setwd("data/SeuratOut/output/afterDbltRemoval/")
+setwd("/mnt/picea/home/schoudhary/shruti/SNRIII/data/")
 #' 
 #' GO enrichment for clusters
 #'
@@ -12,9 +12,9 @@ suppressPackageStartupMessages({
   library(tibble)
 })
 #' 
-suppressMessages(source("~/shruti/SNRIII/UPSCb-common/src/R/topGoUtilities.R"))
+suppressMessages(source("../UPSCb-common/src/R/topGoUtilities.R"))
 goannot <- prepAnnot(mapping = "/mnt/reference/Populus-tremula/v2.2/gopher/gene_to_go.tsv")
-ctrl_marker <- readRDS("~/shruti/SNR-u2023011/analysis/markers/ctrl_marker.rds")
+ctrl_marker <- readRDS("/mnt/picea/home/schoudhary/shruti/SNR-u2023011/analysis/markers/ctrl_marker.rds")
 background <- readRDS("/mnt/ada/projects/aspseq/htuominen/SNR-results/ctrl_bg.rds")
 #' 
 #' 

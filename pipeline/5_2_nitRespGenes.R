@@ -1,3 +1,4 @@
+setwd("/mnt/picea/home/schoudhary/shruti/SNRIII/")
 suppressPackageStartupMessages({
   library(Seurat)
   library(dplyr)
@@ -12,7 +13,7 @@ suppressPackageStartupMessages({
 set.seed(42)
 
 # load seurat
-integ <- readRDS("~/shruti/SNRIII/data/SeuratOut/integ.rds")
+integ <- readRDS("data/SeuratOut/integ.rds")
 DefaultAssay(integ) <- "RNA"
 
 # In case to plot for one sample, split the object
@@ -21,21 +22,21 @@ DefaultAssay(integ) <- "RNA"
 # and plot using the object split_seurat$ctrl 
 
 # Load markers
-# selectedmarker <- read.table("~/shruti/SNR-u2023011/analysis/markers/selMarker.txt",
+# selectedmarker <- read.table("/mnt/picea/home/schoudhary/SNR-u2023011/analysis/markers/selMarker.txt",
 #                              sep = '\t',header=TRUE)
-clustMarker <- read.table("~/shruti/SNR-u2023011/analysis/markers/clustMarker.txt",
+clustMarker <- read.table("/mnt/picea/home/schoudhary/shruti/SNR-u2023011/analysis/markers/clustMarker.txt",
                           sep = '\t',header=TRUE)
-# ploidy <- read.table("~/shruti/SNR-u2023011/analysis/markers/endo_expPotra.txt",
+# ploidy <- read.table("/mnt/picea/home/schoudhary/shruti/SNR-u2023011/analysis/markers/endo_expPotra.txt",
 #                      sep = '\t',header=TRUE)
-# ribosomal <- read.table("~/shruti/SNR-u2023011/analysis/markers/Ribo_gene_table.txt",
+# ribosomal <- read.table("/mnt/picea/home/schoudhary/shruti/SNR-u2023011/analysis/markers/Ribo_gene_table.txt",
 #                         sep = '\t',header=F)
-# protoplasting <- read.table("~/shruti/SNR-u2023011/analysis/markers/pplast.txt",
+# protoplasting <- read.table("/mnt/picea/home/schoudhary/shruti/SNR-u2023011/analysis/markers/pplast.txt",
 #                             sep = '\t',header=F)
-degWilcox <- read.table("~/shruti/SNRIII/data/SeuratOut/output/afterDbltRemoval/markerWilcox_lfc1_fdr0.01_pct0.1.txt",
+degWilcox <- read.table("data/SeuratOut/output/afterDbltRemoval/markerWilcox_lfc1_fdr0.01_pct0.1.txt",
                         header = T)
-nit <- read_excel("~/shruti/SNRIII/data/SeuratOut/bulkDegvsScDeg.xlsx", sheet = 2)
+nit <- read_excel("data/SeuratOut/bulkDegvsScDeg.xlsx", sheet = 2)
 
-# degTime <- read.table("~/shruti/SNRIII/data/degTableS1E.txt",
+# degTime <- read.table("data/degTableS1E.txt",
 #                        header = T, sep = '\t')
 
 #Cluster wise heatmap: scale the data first: 
@@ -80,7 +81,7 @@ nit <- read_excel("~/shruti/SNRIII/data/SeuratOut/bulkDegvsScDeg.xlsx", sheet = 
 #         "Potra2n10c21287")
 
 # only metabolism genes in manuscript (Figure in the manuscript)
-nitRes <- read.table("~/shruti/SNR-u2023011/analysis/markers/fig3marker.txt",
+nitRes <- read.table("/mnt/picea/home/schoudhary/shruti/SNR-u2023011/analysis/markers/fig3marker.txt",
                      sep = '\t',header=TRUE)
 rownames(nitRes) <- nitRes$Potra
 
@@ -97,7 +98,7 @@ integ <- ScaleData(integ, features = rownames(integ), assay = "RNA")
 # use the following to draw heatmap for upregulated and
 # downregulated genes in each cluster for each sample (supp Figure in the manuscript)
 
-# features_to_plot <- read.table("~/shruti/SNR-u2023011/analysis/snrIII/dnStrm/degSNRIII.txt",
+# features_to_plot <- read.table("/mnt/picea/home/schoudhary/shruti/SNR-u2023011/analysis/snrIII/dnStrm/degSNRIII.txt",
 #                                header = TRUE, fill = TRUE, sep = "\t", quote = "")
 # features_to_plot <- features_to_plot %>% filter(status=="up in kno" & FDR <0.05) %>%
 #   pull("GeneID")
@@ -191,7 +192,7 @@ fibUp <- deg %>%
   filter(Level == "Upregulated", Cluster %in% c("1", "4", "10", "14", "15")) %>%
   pull("GeneId")
 fib_clusters_of_interest <- c("1", "4", "10", "14", "15")
-expsn <- readLines("../../expansion.txt")
+expsn <- readLines("data/Seurat_Out/expansion.txt")
 fib_features_to_plot <- expsn[expsn %in% fibUp]
 
 avg_expr_list <- lapply(sample_list, function(x) {
@@ -263,7 +264,7 @@ vesUp <- deg %>%
   filter(Level == "Upregulated", Cluster %in% c("6", "14", "17")) %>%
   pull("GeneId")
 ves_clusters_of_interest <- c("6", "14", "17")
-expsn <- readLines("../../expansion.txt")
+expsn <- readLines("data/SeuratOut/expansion.txt")
 ves_features_to_plot <- expsn[expsn %in% vesUp]
 
 avg_expr_list <- lapply(sample_list, function(x) {

@@ -2,6 +2,7 @@ setwd("data/SeuratOut/output/afterDbltRemoval/")
 #' 
 #' GO enrichment for DEGs per sample
 #'
+setwd("/mnt/picea/home/schoudhary/shruti/SNRIII/")
 set.seed(42)
 suppressPackageStartupMessages({
   library(dplyr)
@@ -22,12 +23,11 @@ suppressPackageStartupMessages({
   library(pheatmap)
   library(scales)
   library(ggplot2)
-  library(here)
   library(RColorBrewer)
 })
 #' 
 #' 
-suppressMessages(source("~/shruti/SNRIII/UPSCb-common/src/R/topGoUtilities.R"))
+suppressMessages(source("UPSCb-common/src/R/topGoUtilities.R"))
 goannot <- prepAnnot(mapping = "/mnt/reference/Populus-tremula/v2.2/gopher/gene_to_go.tsv")
 background <- readRDS("/mnt/ada/projects/aspseq/htuominen/SNR-results/ctrl_bg.rds")
 #'
@@ -36,7 +36,7 @@ dir.create("GO_plots_Wilcoxfdr0.01", showWarnings = FALSE)
 dir.create("GO_tables_Wilcoxfdr0.01", showWarnings = FALSE)
 #'
 #'
-deg_data <- read.table("markerWilcox_lfc1_fdr0.01_pct0.1.txt", header = T)
+deg_data <- read.table("data/SeuratOut/degWilcoxpct0.1fdr0.01.txt", header = T)
 deg_data <- deg_data %>% mutate(Direction = ifelse(avg_log2FC > 0, "up", "down"))
 #'
 #'

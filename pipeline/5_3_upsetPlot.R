@@ -1,3 +1,4 @@
+setwd("/mnt/picea/home/schoudhary/shruti/SNRIII/")
 suppressPackageStartupMessages({
   library(dplyr)
   library(readr)
@@ -13,8 +14,7 @@ suppressPackageStartupMessages({
 set.seed(42)
 
 # upset plots for deg set (Figure in the manuscript)
-deg <- read.table("~/shruti/SNRIII/data/SeuratOut/output/afterDbltRemoval/markerWilcox_lfc1_fdr0.01_pct0.1.txt",
-                             header = T)
+deg <- read.table("data/SeuratOut/degWilcoxpct0.1fdr0.01.txt", header = T)
 deg <- deg %>% select("cluster", "avg_log2FC", "gene")
 
 up = list(

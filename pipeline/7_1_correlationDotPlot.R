@@ -1,4 +1,5 @@
-setwd("~/shruti/SNR-u2023011/analysis/snrIII/dnStrm/correl/")
+setwd("/mnt/picea/home/schoudhary/shruti/SNR-u2023011/analysis/snrIII/dnStrm/correl/")
+
 set.seed(42)
 suppressPackageStartupMessages({
   library(Seurat)
@@ -12,10 +13,9 @@ suppressPackageStartupMessages({
   library(viridis)
 })
 
-integ <- readRDS("~/shruti/SNRIII/data/SeuratOut/integ.rds")
-load("~/shruti/SNR-u2023011/analysis/snrIII/SNRIII-FiltDbltRemIntegSplit.RData")
+integ <- readRDS("/mnt/picea/home/schoudhary/shruti/SNRIII/data/SeuratOut/integ.rds")
+load("/mnt/picea/home/schoudhary/shruti/SNR-u2023011/analysis/snrIII/SNRIII-FiltDbltRemIntegSplit.RData")
 rc <- as.matrix(split_seurat$ctrl@assays$SCT@data)
-rm(integ)
 
 merge.rownames <- function (x,y){
   dat <- merge(x = x, y = y, by = "row.names")
@@ -25,19 +25,21 @@ merge.rownames <- function (x,y){
 }
 
 # 1. with Tung
-tungtpm <- read.table("~/shruti/SNR-u2023011/analysis/publisheddatasets/Tung/GSE180121_Cell_type_TPM_Ptr.txt", sep = "\t", header = TRUE)
+tungtpm <- read.table("/mnt/picea/home/schoudhary/shruti/SNR-u2023011/analysis/publisheddatasets/Tung/GSE180121_Cell_type_TPM_Ptr.txt", sep = "\t", header = TRUE)
 tungtpm$Potri <- sub(".v4.1","",tungtpm$Gene.ID)
-potrapotri <- read.table("~/shruti/SNR-u2023011/analysis/publisheddatasets/potra_potri_BEST_DIAMOND_out.tsv.gz")
+potrapotri <- read.table("/mnt/picea/home/schoudhary/shruti/SNR-u2023011/analysis/publisheddatasets/potra_potri_BEST_DIAMOND_out.tsv.gz")
 colnames(potrapotri) <- c("Potra","Potri")
 tungtpmPotra <- inner_join(tungtpm,potrapotri)
 tungtpmPotra$Potri <- NULL
 tungtpmPotra$Gene.ID <- NULL
 write.table(tungtpmPotra, 
-            file = "~/shruti/ShortTermNitrateTimeSeries-SNRIV/data/tungtpmPotraLcm.txt", 
+            file = "dat/tungtpmPotraLcm.txt", 
             append = FALSE, sep = "\t", quote = F,row.names = F, col.names = TRUE)
 
-TungAvg <- tungtpmPotra %>% select(Potra, Fiber.mean.TPM, Ray.mean.TPM, Vessel.bio2.TPM)
-# TungAvg <- tungtpmPotra %>% select(Potra, Fiber.mean.TPM, Ray.mean.TPM, Vessel.bio3.TPM)
+TungAvg <- tungtpmPotra %>% select(Potra, Fiber.mean.TPM, Ray.mean.TPM, 
+                                   Vessel.bio2.TPM) #vessel 2 probably right vessels
+# TungAvg <- tungtpmPotra %>% select(Potra, Fiber.mean.TPM, Ray.mean.TPM, 
+                                    # Vessel.bio3.TPM)
 rownames(TungAvg) <- TungAvg$Potra
 TungAvg$Potra <- NULL
 

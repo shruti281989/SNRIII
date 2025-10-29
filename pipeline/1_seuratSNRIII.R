@@ -35,6 +35,7 @@
 #' 
 #' Load packages
 #' 
+setwd("/mnt/picea/home/schoudhary/shruti/SNRIII/")
 set.seed(42)
 suppressPackageStartupMessages({
   library(dplyr)
@@ -55,7 +56,6 @@ suppressPackageStartupMessages({
   library(pheatmap)
   library(scales)
   library(ggplot2)
-  library(here)
   library(viridis)
   library(scCustomize)
   library(qs)
@@ -63,11 +63,10 @@ suppressPackageStartupMessages({
 #'
 #'
 #' 1. Load cellranger output (.h5 matrix) for control (kcl) and treated (kno3)
-setwd("/mnt/picea/home/schoudhary/shruti/SNRIII/data/SeuratOut/")
-ctrl1.data <- Read10X_h5("~/shruti/SNR-u2023011/analysis/snrIII/clRngrCntNucl/kcl2/outs/filtered_feature_bc_matrix.h5")
+ctrl1.data <- Read10X_h5("/mnt/picea/home/schoudhary/shruti/SNR-u2023011/analysis/snrIII/clRngrCntNucl/kcl2/outs/filtered_feature_bc_matrix.h5")
 #' 20539 x 37184
 #'
-kno1.data <- Read10X_h5("~/shruti/SNR-u2023011/analysis/snrIII/clRngrCntNucl/kno2/outs/filtered_feature_bc_matrix.h5")
+kno1.data <- Read10X_h5("/mnt/picea/home/schoudhary/shruti/SNR-u2023011/analysis/snrIII/clRngrCntNucl/kno2/outs/filtered_feature_bc_matrix.h5")
 #'14217 x 37184 
 #'
 #' If you want to process the data from the previous runs as well (SNRII) and general LT
@@ -411,13 +410,13 @@ DimPlot(seurat_integrated, reduction = "umap", split.by = "Phase", label = TRUE,
         label.size = 6)
 #'
 #' Extract identity and sample info to determine no. of cells per cluster per sample
-integ <- readRDS("~/shruti/SNRIII/data/SeuratOut/integ.rds")
+integ <- readRDS("data/SeuratOut/integ.rds")
 n_cells <- FetchData(integ, vars = c("ident")) %>% dplyr::count(ident) %>%
   tidyr::spread(ident, n)
 View(n_cells)
 #'
 #'
-#' Clear useless objects
+#' Remove useless objects
 #' 
 #' 
 #' 5. Markers
@@ -439,7 +438,7 @@ ctrl <- NormalizeData(ctrl, verbose = FALSE)
 marker <- FindAllMarkers( integ, logfc.threshold = -Inf, test.use = "wilcox", 
                           min.pct = 0.01, min.diff.pct = 0, only.pos = T, 
                           max.cells.per.ident = 20, assay = "RNA")
-saveRDS(marker, file = "~/shruti/SNR-u2023011/analysis/markers/ctrl_marker.rds")
+saveRDS(marker, file = "/mnt/picea/home/schoudhary/shruti/SNR-u2023011/analysis/markers/ctrl_marker.rds")
 #' 
 background <- rownames(ctrl) # for GO background
 saveRDS(background, file = "/mnt/ada/projects/aspseq/htuominen/SNR-results/ctrl_bg.rds")
@@ -460,7 +459,7 @@ get_conserved <- function(cluster){
   FindConservedMarkers(seurat_integrated, ident.1 = cluster,
                        grouping.var = "sample", only.pos = TRUE)}
 conserved_markers <- map_dfr(c(0:20), get_conserved)
-write.table(conserved_markers, file = "output/afterDbltRemoval/cons_marker.txt",
+write.table(conserved_markers, file = "data/SeuratOut/output/afterDbltRemoval/cons_marker.txt",
             sep = "\t", row.names = T, col.names = T)
 #'
 #'  
@@ -470,7 +469,7 @@ write.table(conserved_markers, file = "output/afterDbltRemoval/cons_marker.txt",
 #' If you want to regress the protoplasting (optional)
 #' 
 # DefaultAssay(integ) <- "RNA"
-# pp_genes <- readLines("~/shruti/SNR-u2023011/analysis/markers/pplast.txt")
+# pp_genes <- readLines("/mnt/picea/home/schoudhary/shruti/SNR-u2023011/analysis/markers/pplast.txt")
 #' 
 #' Identify genes that are present in the Seurat object
 # matching_pp_genes <- pp_genes %in% rownames(integ@assays$RNA@counts)
@@ -490,7 +489,7 @@ write.table(conserved_markers, file = "output/afterDbltRemoval/cons_marker.txt",
 #' 
 #' Finally remove objects from integrated object for NCBI submission for the manuscript
 #' 
-integ <- readRDS("~/shruti/SNRIII/data/SeuratOut/integ.rds")
+integ <- readRDS("data/SeuratOut/integ.rds")
 DefaultAssay(integ) <- "RNA"
 integ@active.ident <- integ$integrated_snn_res.0.6
 DefaultAssay(integ) <- "RNA"
@@ -502,7 +501,8 @@ integ$pANN_0.25_0.3_3879 <- NULL
 integ$doublet_finder <- NULL
 integ$seurat_clusters <- NULL
 integ$RNA_snn_res.0.1 <- NULL
-saveRDS(integ, "data/SeuratOut/integDiffXyT89SNRIII.rds")
+# submit to NCBI
+saveRDS(integ, file="data/SeuratOut/integDiffXyT89SNRIII.rds")
 #'
 #'
 #'

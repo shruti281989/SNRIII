@@ -11,7 +11,7 @@
 #' Info
 #' Check if the paths to files are correct
 #' 
-suppressPackageStartupMessages({
+setwd("/mnt/picea/home/schoudhary/shruti/SNRIII/")
 library(data.table)
 library(here)
 library(hyperSpec)
@@ -58,7 +58,7 @@ degSnr <-read.delim(here("/data/SeuratOut/degWilcoxpct0.1fdr0.01.txt"),
 upKno <- degSnr %>% filter(Level.after.nitrate.tretament == "Upregulated") %>%
   pull(Gene) %>% unique()
 #'
-aspwood <- read.table("~/shruti/SNR-u2023011/analysis/publisheddatasets/AspWood_tpm.txt", 
+aspwood <- read.table("/mnt/picea/home/schoudhary/shruti/SNR-u2023011/analysis/publisheddatasets/AspWood_tpm.txt", 
                       header = TRUE)
 aspwoodtpm <- dcast(aspwood, gene_id ~ sample_name)
 orderaspwood <- c("T1-Phloem-01",
@@ -174,7 +174,7 @@ rownames(aspwoodtpm) <- aspwoodtpm$gene_id
 # aspdata <- as.matrix(select(aspwoodtpm, c(1, 1:107)))
 aspdata <- subset(aspwoodtpm, select = grep("T1-*", colnames(aspwoodtpm)))
 #'
-atnnotation <- read.delim(here("~/shruti/ERF85GeneExp/doc/potra_atgenes.txt"), 
+atnnotation <- read.delim(here("/mnt/picea/home/schoudhary/shruti/ERF85GeneExp/doc/potra_atgenes.txt"), 
                           header = FALSE, sep = "\t")
 colnames(atnnotation) <- c("Potra_ID", "AT_Symbols")
 degAnot <- atnnotation[match(rownames(aspwoodtpm), atnnotation$Potra_ID),]
@@ -204,7 +204,7 @@ hmap2 <- function(selGene, file_name) {
   dev.off()
   
   gene_order <- rownames(tres1)[rev(heatmap_result$rowInd)]
-  write.table(gene_order, file = file.path("~/shruti/SNR-u2023011/analysis/plots/", paste0(file_name, "_gene_order.txt")),
+  write.table(gene_order, file = file.path("/mnt/picea/home/schoudhary/shruti/SNR-u2023011/analysis/plots/", paste0(file_name, "_gene_order.txt")),
               quote = FALSE, row.names = FALSE, col.names = FALSE)
 }
 #'

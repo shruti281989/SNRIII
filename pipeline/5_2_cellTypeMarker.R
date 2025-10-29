@@ -1,26 +1,26 @@
+setwd("/mnt/picea/home/schoudhary/shruti/SNRIII/")
 library(Seurat)
 library(dplyr)
 library(patchwork)
 library(tidyverse)
 library(ggplot2)
-library(here)
 library(viridis)
 library(scCustomize)
 
 set.seed(42)
 
 # Load markers
-# selectedmarker <- read.table("~/shruti/SNR-u2023011/analysis/markers/selMarker.txt",
+# selectedmarker <- read.table("/mnt/picea/home/schoudhary/shruti/SNR-u2023011/analysis/markers/selMarker.txt",
                              # sep = '\t',header=TRUE)
-clustMarker <- read.table("~/shruti/SNR-u2023011/analysis/markers/clustMarker.txt",
+clustMarker <- read.table("/mnt/picea/home/schoudhary/shruti/SNR-u2023011/analysis/markers/clustMarker.txt",
                           sep = '\t',header=TRUE)
-# ploidy <- read.table("~/shruti/SNR-u2023011/analysis/markers/endo_expPotra.txt",
+# ploidy <- read.table("/mnt/picea/home/schoudhary/shruti/SNR-u2023011/analysis/markers/endo_expPotra.txt",
 #                      sep = '\t',header=TRUE)
-# ribosomal <- read.table("~/shruti/SNR-u2023011/analysis/markers/Ribo_gene_table.txt",
+# ribosomal <- read.table("/mnt/picea/home/schoudhary/shruti/SNR-u2023011/analysis/markers/Ribo_gene_table.txt",
 #                         sep = '\t',header=F)
-# protoplasting <- read.table("~/shruti/SNR-u2023011/analysis/markers/pplast.txt",
+# protoplasting <- read.table("/mnt/picea/home/schoudhary/shruti/SNR-u2023011/analysis/markers/pplast.txt",
 #                             sep = '\t',header=F)
-# degSNRTime <- read.csv("~/shruti/SNR-u2023011/analysis/snrIII/dnStrm/degSNRTime.csv",
+# degSNRTime <- read.csv("/mnt/picea/home/schoudhary/shruti/SNR-u2023011/analysis/snrIII/dnStrm/degSNRTime.csv",
 #                        header=T)
 
 # for label with own/AT annotation 
@@ -33,7 +33,7 @@ markeranno <- paste(selectedmarker$Name)
 names(markeranno) <- selectedmarker$GeneId
 
 # load seurat object
-integ <- readRDS("~/shruti/SNRIII/data/SeuratOut/integ.rds")
+integ <- readRDS("data/SeuratOut/integ.rds")
 DefaultAssay(integ) <- "RNA"
 
 # To plot for one sample, split the object
@@ -90,9 +90,6 @@ integ <- ScaleData(integ, features = rownames(integ), assay = "integrated")
 
 # plotting function 1
 # generateDotPlot <- function(data, features) {
-#   png(file.path(here("~/shruti/SNR-u2023011/analysis/"),
-#                 paste0("features",".png")), res= 250,height = 4000, width = 3000)
-#   
 #   p <- DotPlot(integ, features = features,dot.scale = 10) +ylab(NULL)+
 #     scale_colour_viridis(option="viridis")+RotatedAxis()+coord_flip()+
 #     scale_x_discrete(labels = markeranno) + xlab(NULL)
@@ -149,8 +146,7 @@ celldeath <- c("Potra2n14c26495","Potra2n14c27047","Potra2n1c3263","Potra2n5c119
 generateDotPlot <- function(data, markerfile, cellType) {
   markers <- markerfile[markerfile$CellType == cellType, ]$GeneId
   
-  # png(file.path(here("data/SeuratOut/plots/withClCyc/"),
-  png(file.path(here("data/SeuratOut/plots/mtCp/"),
+  png(file.path("data/SeuratOut/plots/mtCp/",
                 paste0(cellType,".png")), res= 250,height = 4000, width = 3000)
   
   p <- DotPlot(data, features = markers, cols ="RdBu", dot.scale = 10) +
