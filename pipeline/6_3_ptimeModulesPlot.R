@@ -10,8 +10,9 @@ library(ggplot2)
 library(dplyr)
 library(here)
 
+#  supplementary figures in manuscript
 # Module
-deg_ids <- readLines("data/SeuratOut/fibTrajec/pseudotimeDeg0.01q_1.txt")
+deg_ids <- readLines("data/SeuratOut/fibTrajec/pseudotimeDeg0.01q.txt")
 cds <- readRDS("data/SeuratOut/fibTrajec/cdsFib14/cds_object.rds")
 
 # deg_ids <- readLines("data/SeuratOut/fusiformVes/pseudotimeDeg0.01q.txt")
@@ -56,7 +57,7 @@ dot_data_long$cluster <- factor(dot_data_long$cluster,
 module_expr <- dot_data_long %>% group_by(module, cluster) %>%
   summarise(avg_expr = mean(expression), .groups = "drop")
 
-# line plot
+# line plot in supplementary figure S4C and S4D
 ggplot(module_expr, aes(x = cluster, y = avg_expr, group = module, 
                         color = as.factor(module))) + geom_line(size = 1.2) +
   geom_point(size = 2) + theme_minimal() +
@@ -65,7 +66,7 @@ ggplot(module_expr, aes(x = cluster, y = avg_expr, group = module,
 
 dir.create("data/SeuratOut/fibTrajec/clusterwise", showWarnings = FALSE)
 
-# ptime gene plot according to module in each cluster
+# ptime gene plot according to module in each cluster in supplementary fig S4E and S4F
 modules <- unique(merged_df$module)
 for (mod in modules) {
   mod_genes <- merged_df$gene[merged_df$module == mod]

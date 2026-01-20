@@ -42,22 +42,47 @@ filtered.marker <- map(names(seurat_marker.list),function(n){
     mutate(cluster = n, gene = rownames(.))
 })
 filtered_markers_df <- do.call(rbind, filtered.marker)
-write.table(filtered_markers_df, "data/SeuratOut/degWilcoxpct0.1fdr0.01.txt", 
+write.table(filtered_markers_df, "data/SeuratOut/output/afterDbltRemoval/degWilcox_lfc1_fdr0.01_pct0.1.txt", 
             row.names = F,col.names = T, quote = F, sep="\t")
 #'
-#' Figure in the manuscript
+#'
+Idents(integ) <- "integrated_snn_res.0.6"
+integ$seurat_clusters <- integ@active.ident
+DefaultAssay(integ) <- "RNA"
+#'
+#' Since cluster number 0 and 2 don't have any suitable markers and are 
+#' unrelated to any tissue type. I have removed them from further deg analysis,
+#' discussions and figures 
+#' 
+dump <- WhichCells(integ, ident= c("0","2"))
+integ1 = subset(integ, cells = dump, invert=T)
+DimPlot_scCustom(integ1, pt.size = 0.3, label=F, split.by = "sample",
+                   colors_use = DiscretePalette_scCustomize(num_colors = 30,
+                                                                                                                                       shuffle_pal = T))
+DefaultAssay(integ1) <- "integrated"
+integ1 <- ScaleData(integ1, verbose = FALSE)
+integ1 <- RunPCA(object = integ1, seed.use = 42)
+integ1 <- RunUMAP(integ1, dims = 1:50, reduction = "pca", seed.use = 42)
+
+# Figure 5A
+DimPlot_scCustom(integ1, pt.size = 0.1, label=F, split.by = "sample",
+                 colors_use = DiscretePalette_scCustomize(num_colors = 30,
+                                                          palette = "varibow", 
+                                                          shuffle_pal = T, 
+                                                          seed = 42))
+
+#' Figure 7A Upregulated Degs for Figure in the manuscript
 pal=brewer.pal(8,"Dark2")
 hpal <- colorRampPalette(c("blue","white","red"))(100)
 mar <- par("mar")
 #' 
-#' DEGs in SNRIII
 #' Modified data/SeuratOut/output/afterDbltRemoval/markerWilcox_lfc1_fdr0.01_pct0.1.txt
-#' marker file in excel to have the desired coulmns as in the manuscript
-degSnr <-read.delim(here("/data/SeuratOut/degWilcoxpct0.1fdr0.01.txt"), 
-                    header = T,sep = "\t")
-upKno <- degSnr %>% filter(Level.after.nitrate.tretament == "Upregulated") %>%
-  pull(Gene) %>% unique()
-#'
+#' deg file in excel to have the desired coulumns names as in the manuscript
+# and remove deg info for cluster 0 and 2
+degSnr <-  read.table("/mnt/picea/home/schoudhary/shruti/SNR-u2023011/analysis/snrIII/dnStrm/degSNRIII.txt",
+                   header = T)
+upKno <- degSnr %>% filter(Level == "Upregulated") %>% pull(GeneId) %>% unique()
+
 aspwood <- read.table("/mnt/picea/home/schoudhary/shruti/SNR-u2023011/analysis/publisheddatasets/AspWood_tpm.txt", 
                       header = TRUE)
 aspwoodtpm <- dcast(aspwood, gene_id ~ sample_name)
@@ -212,7 +237,6 @@ hmap2(upKno, "upKno")
 #'
 #'
 #' If the logTPM+1 is needed (optional)
-#' 
 # aspdatalog <- log2(aspdata + 1)
 # tres <- aspdatalog[rownames(aspdatalog) %in% upKno, ]
 # tres1 <- tres[rowSums(tres != 0) > 0, ]

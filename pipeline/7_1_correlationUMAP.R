@@ -75,6 +75,8 @@ order=c("Fiber", "Ray", "Vessel", "unknown")
 split_seurat$ctrl$exprTungAll.ID.P <- factor(split_seurat$ctrl$exprTungAll.ID.P, levels = order[sort(match(unique(split_seurat$ctrl$exprTungAll.ID.P),order))]) 
 palette <- c("seagreen","blue","pink","grey")
 color <- palette[sort(match(unique(split_seurat$ctrl$exprTungAll.ID.P),order))]
+
+# plot in supplementary Figure S2B
 DimPlot(split_seurat$ctrl, group.by="exprTungAll.ID.P", cols=color)+NoAxes()
 saveRDS(split_seurat, "split_seurat.rds")
 
@@ -88,7 +90,7 @@ saveRDS(split_seurat, "split_seurat.rds")
 # palette <- c("seagreen","blue","pink","grey")
 # color <- palette[sort(match(unique(integ$exprTungAll.ID.P),order))]
 # DimPlot(integ, group.by="exprTungAll.ID.P", cols=color)+NoAxes()
-# saveRDS(integ, "integCorrel.rds")
+# saveRDS(integ, "integCorrelTung.rds")
 
 # Clear useless objects
 
@@ -210,6 +212,8 @@ palette <- c("violet","orange","wheat","green","grey","blue","pink", "aquamarine
              "magenta2","slateblue","olivedrab1", "purple4","yellow","rosybrown",
              "sandybrown","peru","palevioletred", "peru","red")
 color <- palette[sort(match(unique(split_seurat$ctrl$tree1.ID.P),order))]
+
+# plot in supplementary Figure S2A
 DimPlot(split_seurat$ctrl, group.by="tree1.ID.P", cols=color, label = TRUE)+NoAxes()
 saveRDS(split_seurat, "split_seurat.rds")
 

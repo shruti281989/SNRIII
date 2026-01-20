@@ -432,6 +432,7 @@ pcorsubset <- pcor[-grep("kcl*", rownames(pcor)),grep("kcl*", rownames(pcor))]
 mat_breaks <- seq(0.3, max(pcorsubset), length.out = 100)
 # mat_breaks <- seq(0.2, max(pcorsubset), length.out = 100)
 
+# heatmap in supplementary Figure S2C
 pheatmap(pcorsubset, fontsize = 2, cluster_rows = F, #cluster_cols = F,
          display_numbers = round(pcorsubset, digits = 3), 
          number_color = "white", fontsize_number = 2,

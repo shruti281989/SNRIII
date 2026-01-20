@@ -126,7 +126,7 @@ ggplot(df, aes(x = Cluster, y = Term, size = Significant, color = FDR,
   labs(size = "Gene Count", color = "FDR", shape = "Regulation")
 #'
 #'
-#' GO plots in DEGs from scRNASeq data
+#' GO plots in DEGs from scRNASeq data in figure 6A in manuscript
 #' 
 df <- read.table("GODeg.txt", sep = "\t", header = T)
 df$Cluster.number <- factor(df$Cluster.number, levels = unique(df$Cluster.number))

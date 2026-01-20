@@ -9,30 +9,6 @@ library(scCustomize)
 
 set.seed(42)
 
-# Load markers
-# selectedmarker <- read.table("/mnt/picea/home/schoudhary/shruti/SNR-u2023011/analysis/markers/selMarker.txt",
-                             # sep = '\t',header=TRUE)
-clustMarker <- read.table("/mnt/picea/home/schoudhary/shruti/SNR-u2023011/analysis/markers/clustMarker.txt",
-                          sep = '\t',header=TRUE)
-# ploidy <- read.table("/mnt/picea/home/schoudhary/shruti/SNR-u2023011/analysis/markers/endo_expPotra.txt",
-#                      sep = '\t',header=TRUE)
-# ribosomal <- read.table("/mnt/picea/home/schoudhary/shruti/SNR-u2023011/analysis/markers/Ribo_gene_table.txt",
-#                         sep = '\t',header=F)
-# protoplasting <- read.table("/mnt/picea/home/schoudhary/shruti/SNR-u2023011/analysis/markers/pplast.txt",
-#                             sep = '\t',header=F)
-# degSNRTime <- read.csv("/mnt/picea/home/schoudhary/shruti/SNR-u2023011/analysis/snrIII/dnStrm/degSNRTime.csv",
-#                        header=T)
-
-# for label with own/AT annotation 
-clustMarker <- clustMarker[order(clustMarker$Cluster),]
-markeranno <- paste(clustMarker$Name)
-names(markeranno) <- clustMarker$GeneId
-
-selectedmarker <- selectedmarker[order(selectedmarker$CellType),]
-markeranno <- paste(selectedmarker$Name)
-names(markeranno) <- selectedmarker$GeneId
-
-# load seurat object
 integ <- readRDS("data/SeuratOut/integ.rds")
 DefaultAssay(integ) <- "RNA"
 
@@ -41,303 +17,336 @@ split_seurat <- SplitObject(integ, split.by = "sample")
 split_seurat <- split_seurat[c("ctrl", "kno")]
 # and plot using the object split_seurat$ctrl
 
-DimPlot_scCustom(split_seurat$ctrl, figure_plot = T,pt.size = 0.3, label=F,
+DimPlot_scCustom(split_seurat$ctrl, figure_plot = T, pt.size = 0.3, label=F,
                  colors_use = DiscretePalette_scCustomize(num_colors = 30,
                                                           palette = "varibow", 
                                                           shuffle_pal = T))+ 
   NoLegend()
-                 
-# for heatmap, scaling is needed
-integ <- ScaleData(integ, features = rownames(integ), assay = "integrated")
 
-# avgexp = AverageExpression(integ, assay="integrated", return.seurat = T, 
-#                            group.by = 'integrated_snn_res.0.6')
+# figure 4A
+DimPlot_scCustom(integ, pt.size = 0.3, label=F,
+                 colors_use = DiscretePalette_scCustomize(num_colors = 30,
+                                                          palette = "varibow", 
+                                                          shuffle_pal = T)) 
+
+# figure 4B
+fig4 <- read.table("/mnt/picea/home/schoudhary/shruti/SNR-u2023011/analysis/markers/fig4.txt",
+                             sep = '\t',header=TRUE)
+
+# for label with Populus/Arabidospsis annotation 
+fig4 <- fig4[order(fig4$cluster), ]
+# Combine gene and name for labels
+markeranno <- paste(fig4$gene, fig4$name, sep = " ")
+names(markeranno) <- fig4$gene
+
+DotPlot(subset(integ, subset = sample == "ctrl"), features = fig4$gene,
+  dot.scale = 10) + RotatedAxis() + coord_flip()+ xlab(NULL) + ylab(NULL) +
+  scale_x_discrete(labels = markeranno) + scale_colour_viridis()
+
+# Load markers
+# ploidy <- read.table("/mnt/picea/home/schoudhary/shruti/SNR-u2023011/analysis/markers/endo_expPotra.txt",
+#                      sep = '\t',header=TRUE)
+# ribosomal <- read.table("/mnt/picea/home/schoudhary/shruti/SNR-u2023011/analysis/markers/Ribo_gene_table.txt",
+#                         sep = '\t',header=F)
+# protoplasting <- read.table("/mnt/picea/home/schoudhary/shruti/SNR-u2023011/analysis/markers/pplast.txt",
+#                             sep = '\t',header=F)
+#' Plot using different methods
+# Cluster wise heatmap: scale the data first: 
+# integ <- ScaleData(integ, features = rownames(integ))
+# DoHeatmap(integ, features=clustMarker$GeneId, group.by="sample",
+#           group.colors = viridis(100))
+
+# DotPlot(subset(integ, subset = sample =="ctrl"), features = clustMarker$GeneId,
+#         dot.scale = 10)+RotatedAxis()+ 
+#   scale_x_discrete(labels = markeranno)+ylab(NULL)+xlab(NULL)+
+#   scale_colour_gradient(low = "grey", high = "darkblue")
 # 
-# DoHeatmap(avgexp, features = "Potra2n3c7095",angle = 0) + guides(color="none") +
-#   scale_fill_gradientn(colors = viridis(100)) + #inferno(100)
-#   theme(axis.text.y = element_text(size = 6))
-# 
-# DotPlot(subset(integ, subset = sample =="ctrl"),
-#         features = selectedmarker[selectedmarker$CellType == "fiber",]$GeneId,
-#         dot.scale = 10) + ylab(NULL)+coord_flip()+
-#   RotatedAxis() +scale_colour_viridis(option="viridis")+ xlab(NULL)+
-#   scale_x_discrete(labels = markeranno)
-
-# etc <- c(clustMarker[clustMarker$Cluster == "1",]$GeneId, 
-#          clustMarker[clustMarker$Cluster == "2",]$GeneId, 
-#          clustMarker[clustMarker$Cluster == "3",]$GeneId,
-#          clustMarker[clustMarker$Cluster == "4",]$GeneId,
-#          clustMarker[clustMarker$Cluster == "5",]$GeneId, 
-#          clustMarker[clustMarker$Cluster == "6",]$GeneId,
-#          clustMarker[clustMarker$Cluster == "7",]$GeneId,
-#          clustMarker[clustMarker$Cluster == "8",]$GeneId,
-#          clustMarker[clustMarker$Cluster == "9",]$GeneId,
-#          clustMarker[clustMarker$Cluster == "10",]$GeneId,
-#          clustMarker[clustMarker$Cluster == "11",]$GeneId,
-#          clustMarker[clustMarker$Cluster == "12",]$GeneId,
-#          clustMarker[clustMarker$Cluster == "13",]$GeneId,
-#          clustMarker[clustMarker$Cluster == "14",]$GeneId,
-#          clustMarker[clustMarker$Cluster == "15",]$GeneId,
-#          clustMarker[clustMarker$Cluster == "16",]$GeneId,
-#          clustMarker[clustMarker$Cluster == "17",]$GeneId,
-#          clustMarker[clustMarker$Cluster == "18",]$GeneId,
-#          clustMarker[clustMarker$Cluster == "19",]$GeneId,
-#          clustMarker[clustMarker$Cluster == "20",]$GeneId)
-       
-# etc <- c(clustMarker[clustMarker$Cluster == "gus",]$GeneId,
-#          clustMarker[clustMarker$Cluster == "SCW",]$GeneId,
-#          clustMarker[clustMarker$Cluster == "all",]$GeneId)
-
-# plotting function 1
-# generateDotPlot <- function(data, features) {
-#   p <- DotPlot(integ, features = features,dot.scale = 10) +ylab(NULL)+
-#     scale_colour_viridis(option="viridis")+RotatedAxis()+coord_flip()+
-#     scale_x_discrete(labels = markeranno) + xlab(NULL)
-#   
-#   dev.off()
-# }
+# DotPlot(integ, selectedmarker[selectedmarker$CellType == "chen photosyn", ]$GeneId,
+#         cols ="RdBu", dot.scale = 10) + RotatedAxis()+ coord_flip()
+# # cols = c("#005AB5", "#DC3220"),
 
 # grep( "^mt-", rownames(seurat.object), value = T)
-#' Plot using different methods
-# DotPlot(integ, features = selectedmarker[selectedmarker$CellType == "cambium", ]$GeneId,
-#         cols ="RdBu", dot.scale = 10) + RotatedAxis()+ coord_flip()
-# 
-# # special plots can be drawn with scCustomize
-# DotPlot_scCustom(integ, features = nitRes[nitRes$Type == "NRT", ]$GeneId,
-#                  colors_use = viridis_plasma_dark_high)
+# DoHeatmap(subset(integ, downsample = 100), features = ces_synthase, size = 3)
 
-# Split Violin 
-# plots <- VlnPlot(seurat_integrated, features = "Potra2n15c29002", cols = c("blue", "red"),
-#                  split.by = "sample", pt.size = 0, combine = FALSE, split.plot = TRUE)
-# wrap_plots(plots = plots, ncol = 1)                                                                                                                                                                    
-
-# DoHeatmap(subset(seurat_phase, downsample = 100), features = ces_synthase, size = 3)
-
-# Stacked violin
-# a <- VlnPlot(seurat_integrated, features =nrt_han, stack = TRUE, sort = TRUE) +
-#   +     theme(legend.position = "none") + ggtitle("Identity on y-axis")
-# b <- VlnPlot(seurat_integrated, features=nrt_han, stack = TRUE, sort = TRUE, flip = TRUE) +
-#   +     theme(legend.position = "none") + ggtitle("Identity on x-axis")
-# plot_grid(a,b)
-
-# png("lac_fam.png")
-# for (i in length(lac_fam)) {
-#   print(DotPlot(seurat_phase, features = lac_fam)+RotatedAxis())}
-# dev.off()
-# 
-
-DimPlot_scCustom(integ, figure_plot = TRUE,
-                 colors_use = viridis_plasma_dark_high)
-
-#' Find markers based on literature and plot and discuss if they could be good markers for a cell type
+#' test other markers based on literature for a cell type
 #' 
-#' 5.1 selected marker for figure
-selectedmarker <- read.table("data/SeuratOut/selMarker.txt",sep = '\t',header=TRUE)
-
-phloem <- c("Potra2n10c20892","Potra2n10c21280","Potra2n10c21469","Potra2n10c21994","Potra2n11c22484","Potra2n11c22540","Potra2n11c22649","Potra2n11c22821","Potra2n12c23967","Potra2n12c24479","Potra2n12c24713","Potra2n12c24714","Potra2n13c25317","Potra2n13c26179","Potra2n16c29487","Potra2n17c31828","Potra2n18c33107","Potra2n19c33601","Potra2n19c34419","Potra2n1c1686","Potra2n1c2159","Potra2n1c267","Potra2n1c3642","Potra2n1c700","Potra2n2c4235","Potra2n2c5371","Potra2n2c5643","Potra2n2c5644","Potra2n391s35520","Potra2n3c6746","Potra2n4c9160","Potra2n4c9835","Potra2n5c11135","Potra2n5c12223","Potra2n5c12320","Potra2n6c13736","Potra2n6c14623","Potra2n6c15124","Potra2n7c15682","Potra2n7c15685","Potra2n7c15689","Potra2n81s34525","Potra2n81s34526","Potra2n8c17353","Potra2n8c18612","Potra2n9c18825","Potra2n9c19910","Potra2n4c10378","Potra2n16c30506","Potra2n6c14369","Potra2n11c23289","Potra2n13c25854","Potra2n17c31798","Potra2n18c32257","Potra2n18c32258","Potra2n18c32505","Potra2n18c32506","Potra2n18c32791","Potra2n19c33677","Potra2n19c34194","Potra2n1c1091")
-cambium <- c("Potra2n10c20235","Potra2n10c20736","Potra2n10c20760","Potra2n10c20846","Potra2n10c21451","Potra2n10c21673","Potra2n10c22031","Potra2n11c22555","Potra2n11c22567","Potra2n11c22811","Potra2n11c22828","Potra2n11c23322","Potra2n12c23826","Potra2n12c23983","Potra2n12c24164","Potra2n12c24650","Potra2n12c24764","Potra2n13c24952","Potra2n13c25185","Potra2n13c25262","Potra2n13c25541","Potra2n13c25822","Potra2n13c25852","Potra2n14c26391","Potra2n14c26506","Potra2n14c26580","Potra2n14c27085","Potra2n14c27215","Potra2n14c27365","Potra2n14c27708","Potra2n15c27987","Potra2n15c28802","Potra2n15c28861","Potra2n15c29002","Potra2n16c29899","Potra2n16c30563","Potra2n16c30576","Potra2n17c30987","Potra2n17c31100","Potra2n17c31267","Potra2n18c32073","Potra2n18c32470","Potra2n18c32483","Potra2n18c32702","Potra2n18c33107","Potra2n19c33278","Potra2n19c33517","Potra2n19c33790","Potra2n1c1635","Potra2n1c17","Potra2n1c2087","Potra2n1c2195","Potra2n1c2732","Potra2n1c2900","Potra2n1c3147","Potra2n1c357","Potra2n1c3842","Potra2n1c605","Potra2n1c788","Potra2n1c998","Potra2n2c4070","Potra2n2c4139","Potra2n2c4218","Potra2n2c4898","Potra2n2c5282","Potra2n2c5745","Potra2n2c5977","Potra2n2c6181","Potra2n2c6375","Potra2n2c6439","Potra2n3c6864","Potra2n3c7095","Potra2n3c7265","Potra2n3c7460","Potra2n3c7528","Potra2n4c10039","Potra2n4c8814","Potra2n4c9561","Potra2n4c9798","Potra2n5c10575","Potra2n5c10753","Potra2n5c10979","Potra2n5c11241","Potra2n5c11446","Potra2n5c11602","Potra2n5c11916","Potra2n5c11923","Potra2n5c12554","Potra2n6c12962","Potra2n6c13323","Potra2n6c13849","Potra2n6c14336","Potra2n6c14711","Potra2n6c15109","Potra2n7c15470","Potra2n7c15818","Potra2n7c15935","Potra2n7c16113","Potra2n7c16264","Potra2n7c16566","Potra2n8c16773","Potra2n8c17318","Potra2n8c17825","Potra2n8c17900","Potra2n8c18011","Potra2n8c18019","Potra2n9c19378","Potra2n9c19384","Potra2n9c19454","Potra2n9c19718","Potra2n9c19735", "Potra2n6c14967","Potra2n9c19651","Potra2n1c2250","Potra2n6c13361","Potra2n6c15120")
-ray5_7 <- c("Potra2n10c20444","Potra2n11c22600","Potra2n14c27801","Potra2n14c27834","Potra2n15c28669","Potra2n16c30308","Potra2n18c33011","Potra2n1c3480","Potra2n2c4118","Potra2n2c4509","Potra2n3c6926","Potra2n3c6944","Potra2n3c8005","Potra2n4c8449","Potra2n5c11003","Potra2n6c13067","Potra2n6c15285","Potra2n7c16335","Potra2n9c19477","Potra2n13c25349","Potra2n14c27607","Potra2n16c29243","Potra2n16c30464","Potra2n18c32429","Potra2n18c32564","Potra2n1c1049","Potra2n1c2010","Potra2n1c232","Potra2n1c90","Potra2n2c4144","Potra2n2c4942","Potra2n2c5467","Potra2n2c6010","Potra2n3c8020","Potra2n4c10139","Potra2n4c9969")
-ray2<- c("Potra2n13c25215","Potra2n18c32373","Potra2n1c394","Potra2n2c4494","Potra2n2c5697","Potra2n2c5875","Potra2n4c9970","Potra2n5c10874","Potra2n5c11107","Potra2n5c11849","Potra2n8c17115","Potra2n9c18880")
-xpc_ray <- c("Potra2n15c28663","Potra2n16c29896","Potra2n1c3834","Potra2n1c749","Potra2n4c9930","Potra2n6c13057","Potra2n6c13538","Potra2n6c15220","Potra2n14c26690","Potra2n14c26986","Potra2n14c27082","Potra2n14c27101","Potra2n16c30018","Potra2n16c30450","Potra2n17c30920","Potra2n18c32844","Potra2n1c1897","Potra2n1c2429","Potra2n1c394","Potra2n2c4928","Potra2n3c6993","Potra2n4c9205","Potra2n5c11091","Potra2n5c11250","Potra2n5c11849","Potra2n6c14448","Potra2n8c17012","Potra2n8c17375","Potra2n9c18721")
-fiber <- c("Potra2n11c22673","Potra2n11c23199","Potra2n15c28689","Potra2n16c30073","Potra2n16c30273","Potra2n1c546","Potra2n2c4078","Potra2n4c9297","Potra2n6c14160","Potra2n7c15752","Potra2n7c16228","Potra2n19c33344","Potra2n10c20411","Potra2n5c11573","Potra2n13c24959","Potra2n5c11765","Potra2n7c16495","Potra2n1c3619","Potra2n7c16234","Potra2n5c11571","Potra2n3c7305","Potra2n4c8952","Potra2n5c12319","Potra2n12c24762","Potra2n15c28411","Potra2n1c307","Potra2n1c953","Potra2n2c6235","Potra2n16c30051","Potra2n9c19651","Potra2n1c4016","Potra2n11c22498","Potra2n6c14201","Potra2n8c16778","Potra2n8c16946","Potra2n8c17885","Potra2n9c20072")
-celldeath <- c("Potra2n14c26495","Potra2n14c27047","Potra2n1c3263","Potra2n5c11905", "Potra2n4c10301","Potra2n6c15163","Potra2n16c29448","Potra2n10c21346","Potra2n1c3148","Potra2n11c23290","Potra2n1c2692")
-
-# plotting function 2
-generateDotPlot <- function(data, markerfile, cellType) {
-  markers <- markerfile[markerfile$CellType == cellType, ]$GeneId
-  
-  png(file.path("data/SeuratOut/plots/mtCp/",
-                paste0(cellType,".png")), res= 250,height = 4000, width = 3000)
-  
-  p <- DotPlot(data, features = markers, cols ="RdBu", dot.scale = 10) +
-    RotatedAxis()+  ylab(NULL) +xlab(NULL)+coord_flip() +
-    labs(title = cellType)
-  
-  print(p)
-  dev.off()
-}
-
-#' 5.2. From network gene aspwood paper
-# Expansins family
-expansin_fam <- c("Potra2n10c20623","Potra2n10c20953","Potra2n13c24992","Potra2n13c25752","Potra2n16c30156","Potra2n16c30169","Potra2n16c30491","Potra2n17c30722","Potra2n17c31117","Potra2n17c31179","Potra2n19c33898","Potra2n1c11","Potra2n1c2087","Potra2n1c3505","Potra2n1c960","Potra2n2c4734","Potra2n2c4737","Potra2n2c6293","Potra2n4c9142","Potra2n4c9551","Potra2n5c10644","Potra2n6c14375","Potra2n6c14588","Potra2n8c17125","Potra2n8c17409","Potra2n9c18642","Potra2n9c19851","Potra2n1c1267","Potra2n1c1318","Potra2n3c7743","Potra2n3c7783","Potra2n4c10039","Potra2n9c18880")
-
-#' cellulase synthase genes: cesA4, A7-A, A7-B, A8-A, A8-B
-ces <- c("Potra2n2c4078","Potra2n6c13749", "Potra2n18c32336", "Potra2n11c23199", "Potra2n4c8952")
-
-#' Phloem: shouldn't exist in present dataset
-phloem <- c("Potra2n17c30730","Potra2n12c24024","Potra2n15c28954","Potra2n4c9149", "Potra2n8c17353","Potra2n10c20892","Potra2n17c30726","Potra2n4c9146","Potra2n10c20934","Potra2n8c17387","Potra2n1c1172","Potra2n17c30744","Potra2n4c9160","Potra2n8c18492")
-bsp <- c("Potra2n13c25437", "Potra2n13c25438", "Potra2n13c25439", "Potra2n13c25440", "Potra2n13c25589", "Potra2n158s34776", "Potra2n484s35780")
-
-#' Cambium/phloem: PtOPS-A, PtOPS-B, PtBRX-A, PtBRX-B, CLE41, MYB83/PtMYB20/21
-camb_or_phloem <- c("Potra2n6c14490","Potra2n16c30270","Potra2n1c1136","Potra2n3c7606","Potra2n2c4235","Potra2n9c19455")
-
-#' Cambium/expanding xylem:
-#' PtCDC2, PtAINT, PtAINT, PtAINT, PtAINT, LOG4/PtLOG6, PtPM2, PtPL1-27
-cambium <- c("Potra2n16c30563","Potra2n2c5371","Potra2n6c14967","Potra2n227s35019","Potra2n1c1493","Potra2n16c30088", "Potra2n5c10720","Potra2n3c6899")
-
-#' SNARE-like, MYB83/PtMYB20/21, MYB46/PtMYB21, PtTMO5-A, PtTMO5-B, PtEXPA1
-cambium_expandingxylem <- c ("Potra2n1c1686","Potra2n1c2305", "Potra2n9c19651","Potra2n10c21280","Potra2n8c17692", "Potra2n1c2087")
-
-#' Expanding xylem: PtTMO5-A, PtTMO5-B, snd, vnd, vnd, snd, AtLAC11, LAC, LAC12
-expx <- c ("Potra2n10c21280","Potra2n17c31797", "Potra2n12c24750","Potra2n3c7486","Potra2n7c15489","Potra2n1c2159","Potra2n317s35299","Potra2n11c22797")
-
-#' Lignified xylem or everywhere except expanding xylem
-#' PtPM1, PtBFN1, PtBAM3-A, PtBAM3-B, PtBAM3-C, PtLHW-A, PtLHW-B
-lignified_xylem <- c ("Potra2n2c6214","Potra2n10c21346", "Potra2n1c593", "Potra2n3c7083","Potra2n4c10378","Potra2n280s35193","Potra2n1c1878")
-
-#' Xyloglucan and pectin biosynthesis genes
-xylo <- c("Potra2n267s35161","Potra2n10c22184","Potra2n10c22183",
-          "Potra2n12c24288","Potra2n15c28674")
-
-pectin <- c("Potra2n14c26890","Potra2n2c5051","Potra2n4c10217","Potra2n16c29244",
-            "Potra2n6c15382","Potra2n16c30575","Potra2n252s35126","Potra2n5c10503",
-            "Potra2n3c7089","Potra2n1c601","Potra2n2c4911","Potra2n14c27069",
-            "Potra2n12c24734","Potra2n114s34573")
-
-#' 5.3. Laccases family (as per aspwood) specific to cluster or cell type could exist:
-lac_fam <- c("Potra2n10c20714","Potra2n10c20806","Potra2n11c22797","Potra2n11c23187","Potra2n12c24132","Potra2n13c25011","Potra2n14c27140","Potra2n8c17196",
-             "Potra2n15c28842","Potra2n16c30017","Potra2n16c30239","Potra2n16c30241","Potra2n16c30273","Potra2n16c30274","Potra2n6c13254",
-             "Potra2n19c33334","Potra2n19c33575","Potra2n1c1775","Potra2n1c2108","Potra2n1c2159","Potra2n1c2996","Potra2n1c3502","Potra2n1c447","Potra2n317s35299","Potra2n4c9830","Potra2n5c11061","Potra2n5c11062","Potra2n5c11063","Potra2n6c14486","Potra2n6c14515","Potra2n6c14571","Potra2n6c14577","Potra2n7c16431","Potra2n8c17197","Potra2n8c17280","Potra2n9c18755","Potra2n9c19221","Potra2n9c19763","Potra2n9c19826")
+#' 5.1 from literature
+#' phloem <- c("Potra2n10c20892","Potra2n10c21280","Potra2n10c21469","Potra2n10c21994",
+#'             "Potra2n11c22484","Potra2n11c22540","Potra2n11c22649","Potra2n11c22821",
+#'             "Potra2n12c23967","Potra2n12c24479","Potra2n12c24713","Potra2n12c24714",
+#'             "Potra2n13c25317","Potra2n13c26179","Potra2n16c29487","Potra2n17c31828",
+#'             "Potra2n18c33107","Potra2n19c33601","Potra2n19c34419","Potra2n1c1686",
+#'             "Potra2n1c2159","Potra2n1c267","Potra2n1c3642","Potra2n1c700","Potra2n2c4235",
+#'             "Potra2n2c5371","Potra2n2c5643","Potra2n2c5644","Potra2n391s35520",
+#'             "Potra2n3c6746","Potra2n4c9160","Potra2n4c9835","Potra2n5c11135",
+#'             "Potra2n5c12223","Potra2n5c12320","Potra2n6c13736","Potra2n6c14623",
+#'             "Potra2n6c15124","Potra2n7c15682","Potra2n7c15685","Potra2n7c15689",
+#'             "Potra2n81s34525","Potra2n81s34526","Potra2n8c17353","Potra2n8c18612",
+#'             "Potra2n9c18825","Potra2n9c19910","Potra2n4c10378","Potra2n16c30506",
+#'             "Potra2n6c14369","Potra2n11c23289","Potra2n13c25854","Potra2n17c31798",
+#'             "Potra2n18c32257","Potra2n18c32258","Potra2n18c32505","Potra2n18c32506",
+#'             "Potra2n18c32791","Potra2n19c33677","Potra2n19c34194","Potra2n1c1091")
+#' cambium <- c("Potra2n10c20235","Potra2n10c20736","Potra2n10c20760","Potra2n10c20846",
+#'              "Potra2n10c21451","Potra2n10c21673","Potra2n10c22031","Potra2n11c22555",
+#'              "Potra2n11c22567","Potra2n11c22811","Potra2n11c22828","Potra2n11c23322",
+#'              "Potra2n12c23826","Potra2n12c23983","Potra2n12c24164","Potra2n12c24650",
+#'              "Potra2n12c24764","Potra2n13c24952","Potra2n13c25185","Potra2n13c25262",
+#'              "Potra2n13c25541","Potra2n13c25822","Potra2n13c25852","Potra2n14c26391",
+#'              "Potra2n14c26506","Potra2n14c26580","Potra2n14c27085","Potra2n14c27215",
+#'              "Potra2n14c27365","Potra2n14c27708","Potra2n15c27987","Potra2n15c28802",
+#'              "Potra2n15c28861","Potra2n15c29002","Potra2n16c29899","Potra2n16c30563",
+#'              "Potra2n16c30576","Potra2n17c30987","Potra2n17c31100","Potra2n17c31267",
+#'              "Potra2n18c32073","Potra2n18c32470","Potra2n18c32483","Potra2n18c32702",
+#'              "Potra2n18c33107","Potra2n19c33278","Potra2n19c33517","Potra2n19c33790",
+#'              "Potra2n1c1635","Potra2n1c17","Potra2n1c2087","Potra2n1c2195","Potra2n1c2732",
+#'              "Potra2n1c2900","Potra2n1c3147","Potra2n1c357","Potra2n1c3842","Potra2n1c605",
+#'              "Potra2n1c788","Potra2n1c998","Potra2n2c4070","Potra2n2c4139","Potra2n2c4218",
+#'              "Potra2n2c4898","Potra2n2c5282","Potra2n2c5745","Potra2n2c5977","Potra2n2c6181",
+#'              "Potra2n2c6375","Potra2n2c6439","Potra2n3c6864","Potra2n3c7095","Potra2n3c7265",
+#'              "Potra2n3c7460","Potra2n3c7528","Potra2n4c10039","Potra2n4c8814","Potra2n4c9561",
+#'              "Potra2n4c9798","Potra2n5c10575","Potra2n5c10753","Potra2n5c10979","Potra2n5c11241",
+#'              "Potra2n5c11446","Potra2n5c11602","Potra2n5c11916","Potra2n5c11923","Potra2n5c12554",
+#'              "Potra2n6c12962","Potra2n6c13323","Potra2n6c13849","Potra2n6c14336","Potra2n6c14711",
+#'              "Potra2n6c15109","Potra2n7c15470","Potra2n7c15818","Potra2n7c15935","Potra2n7c16113",
+#'              "Potra2n7c16264","Potra2n7c16566","Potra2n8c16773","Potra2n8c17318","Potra2n8c17825",
+#'              "Potra2n8c17900","Potra2n8c18011","Potra2n8c18019","Potra2n9c19378","Potra2n9c19384",
+#'              "Potra2n9c19454","Potra2n9c19718","Potra2n9c19735", "Potra2n6c14967","Potra2n9c19651",
+#'              "Potra2n1c2250","Potra2n6c13361","Potra2n6c15120")
+#' ray5_7 <- c("Potra2n10c20444","Potra2n11c22600","Potra2n14c27801","Potra2n14c27834",
+#'             "Potra2n15c28669","Potra2n16c30308","Potra2n18c33011","Potra2n1c3480",
+#'             "Potra2n2c4118","Potra2n2c4509","Potra2n3c6926","Potra2n3c6944",
+#'             "Potra2n3c8005","Potra2n4c8449","Potra2n5c11003","Potra2n6c13067",
+#'             "Potra2n6c15285","Potra2n7c16335","Potra2n9c19477","Potra2n13c25349",
+#'             "Potra2n14c27607","Potra2n16c29243","Potra2n16c30464","Potra2n18c32429",
+#'             "Potra2n18c32564","Potra2n1c1049","Potra2n1c2010","Potra2n1c232","Potra2n1c90",
+#'             "Potra2n2c4144","Potra2n2c4942","Potra2n2c5467","Potra2n2c6010","Potra2n3c8020",
+#'             "Potra2n4c10139","Potra2n4c9969","Potra2n13c25215","Potra2n18c32373",
+#'             "Potra2n1c394","Potra2n2c4494", "Potra2n2c5697","Potra2n2c5875",
+#'             "Potra2n4c9970","Potra2n5c10874", "Potra2n5c11107","Potra2n5c11849","Potra2n8c17115","Potra2n9c18880")
+#' xpc_ray <- c("Potra2n15c28663","Potra2n16c29896","Potra2n1c3834","Potra2n1c749",
+#'              "Potra2n4c9930","Potra2n6c13057","Potra2n6c13538","Potra2n6c15220",
+#'              "Potra2n14c26690","Potra2n14c26986","Potra2n14c27082","Potra2n14c27101",
+#'              "Potra2n16c30018","Potra2n16c30450","Potra2n17c30920","Potra2n18c32844",
+#'              "Potra2n1c1897","Potra2n1c2429","Potra2n1c394","Potra2n2c4928",
+#'              "Potra2n3c6993","Potra2n4c9205","Potra2n5c11091","Potra2n5c11250",
+#'              "Potra2n5c11849","Potra2n6c14448","Potra2n8c17012","Potra2n8c17375","Potra2n9c18721")
+#' fiber <- c("Potra2n11c22673","Potra2n11c23199","Potra2n15c28689","Potra2n16c30073",
+#'            "Potra2n16c30273","Potra2n1c546","Potra2n2c4078","Potra2n4c9297",
+#'            "Potra2n6c14160","Potra2n7c15752","Potra2n7c16228","Potra2n19c33344",
+#'            "Potra2n10c20411","Potra2n5c11573","Potra2n13c24959","Potra2n5c11765",
+#'            "Potra2n7c16495","Potra2n1c3619","Potra2n7c16234","Potra2n5c11571",
+#'            "Potra2n3c7305","Potra2n4c8952","Potra2n5c12319","Potra2n12c24762",
+#'            "Potra2n15c28411","Potra2n1c307","Potra2n1c953","Potra2n2c6235",
+#'            "Potra2n16c30051","Potra2n9c19651","Potra2n1c4016","Potra2n11c22498",
+#'            "Potra2n6c14201","Potra2n8c16778","Potra2n8c16946","Potra2n8c17885","Potra2n9c20072")
+#' celldeath <- c("Potra2n14c26495","Potra2n14c27047","Potra2n1c3263","Potra2n5c11905", 
+#'                "Potra2n4c10301","Potra2n6c15163","Potra2n16c29448","Potra2n10c21346",
+#'                "Potra2n1c3148","Potra2n11c23290","Potra2n1c2692")
 #' 
-#' 5.4. For rays
-#' PIRIN2 could be a marker of lignified xylem or rays
-prn2 <- c("Potra2n2c4342","Potra2n14c27610", "Potra2n9c19440")
-cad <- c("Potra2n11c22541", "Potra2n16c29439", "Potra2n16c29966", "Potra2n1c2317", "Potra2n1c2619", "Potra2n1c2670", "Potra2n1c3264","Potra2n2c6287", "Potra2n6c13590", "Potra2n6c15177", "Potra2n9c19275", "Potra2n9c19467")
-
-# Spruce paper
-spruce1 <- c("Potra2n10c20105","Potra2n10c20117","Potra2n10c20129","Potra2n10c20225","Potra2n10c20276","Potra2n10c20410","Potra2n10c20466","Potra2n10c20470","Potra2n10c20580","Potra2n10c20585","Potra2n10c20710","Potra2n10c20727","Potra2n10c20807","Potra2n10c20927","Potra2n10c21018","Potra2n10c21033","Potra2n10c21129","Potra2n10c21141","Potra2n10c21152","Potra2n10c21362","Potra2n10c21409","Potra2n10c21494","Potra2n10c21567","Potra2n10c21732","Potra2n10c21778","Potra2n10c21861","Potra2n10c21929","Potra2n10c21932","Potra2n10c22031","Potra2n10c22268","Potra2n10c22340","Potra2n11c22547","Potra2n11c22650","Potra2n11c22888","Potra2n11c22905","Potra2n11c23041","Potra2n11c23329","Potra2n11c23367","Potra2n11c23622","Potra2n124s34590","Potra2n12c23825","Potra2n12c24027","Potra2n12c24073","Potra2n12c24111","Potra2n12c24266","Potra2n12c24307","Potra2n12c24311","Potra2n12c24319","Potra2n12c24349","Potra2n12c24351","Potra2n12c24355","Potra2n12c24394","Potra2n12c24518","Potra2n12c24631","Potra2n12c24651","Potra2n12c24678","Potra2n12c24861","Potra2n12c24905","Potra2n13c25056","Potra2n13c25157","Potra2n13c25500","Potra2n13c25691","Potra2n13c25746","Potra2n13c25763","Potra2n13c25815","Potra2n13c25833","Potra2n13c26053","Potra2n13c26113","Potra2n13c26147","Potra2n13c26215","Potra2n14c26426","Potra2n14c26546","Potra2n14c26563","Potra2n14c26569","Potra2n14c26654","Potra2n14c26877","Potra2n14c27015","Potra2n14c27189","Potra2n14c27411","Potra2n14c27523","Potra2n14c27573","Potra2n14c27741","Potra2n14c27780","Potra2n14c27934","Potra2n15c27994","Potra2n15c28086","Potra2n15c28102","Potra2n15c28180","Potra2n15c28342","Potra2n15c28354","Potra2n15c28391","Potra2n15c28541","Potra2n15c28568","Potra2n15c28597","Potra2n15c28664","Potra2n15c28710","Potra2n15c28873","Potra2n15c28955","Potra2n15c29152","Potra2n15c29203","Potra2n15c29207","Potra2n15c29218","Potra2n16c29477","Potra2n16c29505","Potra2n16c29591","Potra2n16c29640")
-spruce2 <- c("Potra2n16c29733","Potra2n16c30047","Potra2n16c30069","Potra2n16c30095","Potra2n16c30181","Potra2n16c30227","Potra2n16c30315","Potra2n16c30352","Potra2n16c30497","Potra2n171s34790","Potra2n17c30583","Potra2n17c30648","Potra2n17c30664","Potra2n17c30671","Potra2n17c30792","Potra2n17c30839","Potra2n17c30997","Potra2n17c31120","Potra2n17c31124","Potra2n17c31219","Potra2n17c31235","Potra2n17c31245","Potra2n17c31290","Potra2n17c31326","Potra2n17c31407","Potra2n17c31413","Potra2n17c31434","Potra2n17c31722","Potra2n17c31824","Potra2n17c31924","Potra2n181s34807","Potra2n18c32057","Potra2n18c32081","Potra2n18c32177","Potra2n18c32202","Potra2n18c32285","Potra2n18c32287","Potra2n18c32367","Potra2n18c32483","Potra2n18c32574","Potra2n18c32639","Potra2n18c32645","Potra2n18c32647","Potra2n18c32688","Potra2n18c32707","Potra2n18c32864","Potra2n18c32872","Potra2n18c32981","Potra2n18c32995","Potra2n18c33034","Potra2n18c33061","Potra2n18c33072","Potra2n18c33139","Potra2n18c33199","Potra2n18c33226","Potra2n197s34885","Potra2n197s34898","Potra2n19c33311","Potra2n19c33434","Potra2n19c33549","Potra2n19c33583","Potra2n19c33692","Potra2n19c33796","Potra2n19c33865","Potra2n19c33884","Potra2n19c33903","Potra2n19c33919","Potra2n19c33957","Potra2n19c34050","Potra2n19c34069","Potra2n19c34127","Potra2n19c34161","Potra2n19c34181","Potra2n19c34336","Potra2n1c1075","Potra2n1c1133","Potra2n1c117","Potra2n1c1180","Potra2n1c1221","Potra2n1c1260","Potra2n1c1307","Potra2n1c1416","Potra2n1c1509","Potra2n1c1547","Potra2n1c1730","Potra2n1c1742","Potra2n1c176","Potra2n1c1805","Potra2n1c1988","Potra2n1c2277","Potra2n1c2331","Potra2n1c2335","Potra2n1c2357","Potra2n1c2431","Potra2n1c245","Potra2n1c247","Potra2n1c2699","Potra2n1c2728","Potra2n1c2778","Potra2n1c2794","Potra2n1c2795","Potra2n1c2896","Potra2n1c2900","Potra2n1c3010","Potra2n1c3081","Potra2n1c3123","Potra2n1c3141","Potra2n1c3154","Potra2n1c3163","Potra2n1c3226")
-spruce3 <- c("Potra2n1c3229","Potra2n1c3230","Potra2n1c3239","Potra2n1c3281","Potra2n1c3288","Potra2n1c3344","Potra2n1c3443","Potra2n1c348","Potra2n1c3563","Potra2n1c3596","Potra2n1c3829","Potra2n1c3830","Potra2n1c3931","Potra2n1c394","Potra2n1c40","Potra2n1c410","Potra2n1c418","Potra2n1c422","Potra2n1c424","Potra2n1c446","Potra2n1c52","Potra2n1c575","Potra2n1c719","Potra2n1c726","Potra2n1c748","Potra2n1c806","Potra2n1c880","Potra2n1c892","Potra2n1c893","Potra2n299s35259","Potra2n2c4131","Potra2n2c4139","Potra2n2c4158","Potra2n2c4222","Potra2n2c4263","Potra2n2c4353","Potra2n2c4552","Potra2n2c4570","Potra2n2c4577","Potra2n2c4612","Potra2n2c4650","Potra2n2c4694","Potra2n2c4708","Potra2n2c4859","Potra2n2c4953","Potra2n2c5119","Potra2n2c5181","Potra2n2c5186","Potra2n2c5399","Potra2n2c5450","Potra2n2c5507","Potra2n2c5514","Potra2n2c5674","Potra2n2c5681","Potra2n2c5892","Potra2n2c6050","Potra2n2c6112","Potra2n2c6136","Potra2n2c6181","Potra2n2c6193","Potra2n2c6256","Potra2n2c6268","Potra2n2c6273","Potra2n2c6367","Potra2n2c6387","Potra2n2c6401","Potra2n369s35445","Potra2n3c6495","Potra2n3c6496","Potra2n3c6551","Potra2n3c6824","Potra2n3c7048","Potra2n3c7199","Potra2n3c7234","Potra2n3c7289","Potra2n3c7321","Potra2n3c7365","Potra2n3c7384","Potra2n3c7490","Potra2n3c7665","Potra2n3c7680","Potra2n3c7686","Potra2n3c7729","Potra2n3c7765","Potra2n3c7796","Potra2n3c7850","Potra2n3c7961","Potra2n3c7979","Potra2n3c7983","Potra2n3c7995","Potra2n3c8048","Potra2n3c8080","Potra2n3c8098","Potra2n3c8105","Potra2n3c8114","Potra2n3c8135","Potra2n3c8295","Potra2n3c8298","Potra2n3c8398","Potra2n4c10010","Potra2n4c10048","Potra2n4c10065","Potra2n4c10096","Potra2n4c10133","Potra2n4c10225","Potra2n4c10383","Potra2n4c10399","Potra2n4c10400","Potra2n4c8584","Potra2n4c8716","Potra2n4c8872","Potra2n4c8951","Potra2n4c9060","Potra2n4c9094","Potra2n4c9103","Potra2n4c9165","Potra2n4c9177","Potra2n4c9193","Potra2n4c9211","Potra2n4c9325","Potra2n4c9465")
-spruce4 <- c("Potra2n4c9508","Potra2n4c9517","Potra2n4c9518","Potra2n4c9555","Potra2n4c9577","Potra2n4c9617","Potra2n4c9663","Potra2n4c9674","Potra2n4c9802","Potra2n4c9804","Potra2n4c9848","Potra2n4c9879","Potra2n4c9956","Potra2n555s35934","Potra2n5c10673","Potra2n5c10703","Potra2n5c10900","Potra2n5c10903","Potra2n5c11079","Potra2n5c11110","Potra2n5c11276","Potra2n5c11516","Potra2n5c11676","Potra2n5c11679","Potra2n5c11697","Potra2n5c11822","Potra2n5c11900","Potra2n5c11918","Potra2n5c12083","Potra2n5c12136","Potra2n5c12169","Potra2n5c12187","Potra2n5c12207","Potra2n5c12209","Potra2n5c12252","Potra2n5c12264","Potra2n5c12342","Potra2n5c12614","Potra2n5c12675","Potra2n5c12800","Potra2n5c12824","Potra2n6c12905","Potra2n6c12948","Potra2n6c12956","Potra2n6c13059","Potra2n6c13157","Potra2n6c13209","Potra2n6c13266","Potra2n6c13376","Potra2n6c13383","Potra2n6c13411","Potra2n6c13683","Potra2n6c13687","Potra2n6c13700","Potra2n6c13708","Potra2n6c13837","Potra2n6c13866","Potra2n6c13874","Potra2n6c14072","Potra2n6c14161","Potra2n6c14232","Potra2n6c14247","Potra2n6c14309","Potra2n6c14311","Potra2n6c14341","Potra2n6c14425","Potra2n6c14496","Potra2n6c14501","Potra2n6c14517","Potra2n6c14630","Potra2n6c14717","Potra2n6c14843","Potra2n6c14963","Potra2n6c15111","Potra2n6c15200","Potra2n6c15253","Potra2n6c15367","Potra2n6c15378","Potra2n6c15391","Potra2n771s36725","Potra2n7c15407","Potra2n7c15495","Potra2n7c15541","Potra2n7c15656","Potra2n7c15785","Potra2n7c15857","Potra2n7c15860","Potra2n7c15900","Potra2n7c15935","Potra2n7c15937","Potra2n7c16052","Potra2n7c16065","Potra2n7c16127","Potra2n7c16150","Potra2n7c16354","Potra2n7c16364","Potra2n7c16399","Potra2n7c16503","Potra2n7c16553","Potra2n8c16654","Potra2n8c16672","Potra2n8c16698","Potra2n8c16871","Potra2n8c16967","Potra2n8c16989","Potra2n8c16998","Potra2n8c17063","Potra2n8c17077","Potra2n8c17096","Potra2n8c17104","Potra2n8c17176","Potra2n8c17201","Potra2n8c17282","Potra2n8c17294")
-spruce5 <- c("Potra2n8c17345","Potra2n8c17370","Potra2n8c17373","Potra2n8c17524","Potra2n8c17653","Potra2n8c17869","Potra2n8c17947","Potra2n8c17980","Potra2n8c18012","Potra2n8c18094","Potra2n8c18174","Potra2n8c18275","Potra2n8c18406","Potra2n8c18425","Potra2n9c18644","Potra2n9c18649","Potra2n9c18651","Potra2n9c18679","Potra2n9c18726","Potra2n9c18920","Potra2n9c18940","Potra2n9c18986","Potra2n9c19037","Potra2n9c19052","Potra2n9c19080","Potra2n9c19104","Potra2n9c19335","Potra2n9c19337","Potra2n9c19393","Potra2n9c19456","Potra2n9c19505","Potra2n9c19583","Potra2n9c19638","Potra2n9c19977","Potra2n9c19981","Potra2n9c19993","Potra2n9c20036")
-spruceRayTr <- c("Potra2n10c20290","Potra2n10c21065","Potra2n10c21384","Potra2n10c21612","Potra2n10c21678","Potra2n10c22102","Potra2n10c22346","Potra2n11c22393","Potra2n11c22397","Potra2n11c22799","Potra2n11c22967","Potra2n11c23004","Potra2n11c23214","Potra2n11c23292","Potra2n11c23408","Potra2n125s34635","Potra2n12c24486","Potra2n12c24922","Potra2n13c24991","Potra2n13c25091","Potra2n13c26023","Potra2n13c26203","Potra2n14c26455","Potra2n14c26459","Potra2n14c26583","Potra2n14c26599","Potra2n14c26671","Potra2n14c27183","Potra2n14c27509","Potra2n14c27636","Potra2n14c27694","Potra2n14c27799","Potra2n15c28654","Potra2n15c28760","Potra2n16c29728","Potra2n16c29954","Potra2n16c30061","Potra2n16c30167","Potra2n17c30672","Potra2n17c30824","Potra2n17c30826","Potra2n17c30833","Potra2n17c30976","Potra2n17c30977","Potra2n17c31134","Potra2n17c31150","Potra2n17c31358","Potra2n17c31390","Potra2n17c31632","Potra2n17c31804","Potra2n18c32244","Potra2n18c32950","Potra2n19c33981","Potra2n1c1149","Potra2n1c1150","Potra2n1c1600","Potra2n1c1674","Potra2n1c1856","Potra2n1c2053","Potra2n1c2081","Potra2n1c2432","Potra2n1c2599","Potra2n1c3522","Potra2n1c3663","Potra2n2c4123","Potra2n2c4496","Potra2n2c4558","Potra2n2c4714","Potra2n2c4741","Potra2n2c4763","Potra2n2c4835","Potra2n2c5141","Potra2n2c5190","Potra2n2c5505","Potra2n2c5519","Potra2n2c5562","Potra2n2c5669","Potra2n2c5672","Potra2n2c5745","Potra2n2c5754","Potra2n2c5860","Potra2n2c6093","Potra2n2c6199","Potra2n3c6749","Potra2n3c6796","Potra2n3c7380","Potra2n3c7607","Potra2n3c7645","Potra2n3c7832","Potra2n3c7896","Potra2n4c10124","Potra2n4c9234","Potra2n4c9252","Potra2n4c9818","Potra2n507s35842","Potra2n5c10514","Potra2n5c10716","Potra2n5c10725","Potra2n5c10942","Potra2n5c11175")
-spruceRayTr1 <- c("Potra2n5c12165","Potra2n5c12200","Potra2n5c12575","Potra2n5c12624","Potra2n6c13313","Potra2n6c13567","Potra2n6c13577","Potra2n6c13654","Potra2n6c14293","Potra2n6c14381","Potra2n6c14413","Potra2n6c14609","Potra2n6c15312","Potra2n7c15800","Potra2n7c16217","Potra2n7c16267","Potra2n7c16595","Potra2n8c16919","Potra2n8c16970","Potra2n8c17119","Potra2n8c17199","Potra2n8c17442","Potra2n8c17849","Potra2n8c18074","Potra2n8c18312","Potra2n8c18465","Potra2n8c18502","Potra2n9c18951","Potra2n9c19252","Potra2n9c19586","Potra2n9c19734","Potra2n9c19775","Potra2n9c19912","Potra2n9c19980","Potra2n9c19986","Potra2n9c19998","Potra2n9c20012","Potra2n10c20684","Potra2n10c21153","Potra2n10c21416","Potra2n10c22106","Potra2n10c22175","Potra2n10c22224","Potra2n11c22500","Potra2n11c23073","Potra2n11c23093","Potra2n124s34588","Potra2n12c24348","Potra2n12c24650","Potra2n12c24676","Potra2n12c24764","Potra2n12c24834","Potra2n13c26154","Potra2n14c27188","Potra2n14c27207","Potra2n14c27231","Potra2n14c27277","Potra2n14c27732","Potra2n14c27795","Potra2n16c29450","Potra2n16c30152","Potra2n16c30301","Potra2n16c30366","Potra2n17c31907","Potra2n18c32490","Potra2n18c32813","Potra2n18c33087","Potra2n199s34920","Potra2n1c1031","Potra2n1c1876","Potra2n1c1954","Potra2n1c1958","Potra2n1c2001","Potra2n1c2664","Potra2n1c3201","Potra2n1c3209","Potra2n1c33","Potra2n1c3403","Potra2n1c3584","Potra2n1c3771","Potra2n1c801","Potra2n1c824","Potra2n1c832","Potra2n1c947","Potra2n2c4143","Potra2n2c4224","Potra2n2c4258","Potra2n2c4672","Potra2n2c4906","Potra2n2c5169","Potra2n2c5438","Potra2n2c5778","Potra2n2c6317","Potra2n380s35490","Potra2n3c6530","Potra2n3c6774","Potra2n3c6898","Potra2n3c7138","Potra2n3c7575","Potra2n3c7679")
-spruceRayTr2 <- c("Potra2n3c7994","Potra2n3c8046","Potra2n3c8278","Potra2n4c10060","Potra2n4c10332","Potra2n4c10463","Potra2n4c8632","Potra2n4c8758","Potra2n4c8780","Potra2n4c9501","Potra2n4c9812","Potra2n4c9997","Potra2n5c11685","Potra2n5c11828","Potra2n611s36149","Potra2n641s36252","Potra2n680s36424","Potra2n6c13065","Potra2n6c13267","Potra2n6c13626","Potra2n6c13793","Potra2n6c13959","Potra2n6c14061","Potra2n6c14276","Potra2n6c14322","Potra2n6c14506","Potra2n6c14550","Potra2n6c15076","Potra2n6c15231","Potra2n6c15256","Potra2n751s36689","Potra2n7c16011","Potra2n7c16460","Potra2n8c16786","Potra2n8c17117","Potra2n8c17223","Potra2n8c17341","Potra2n9c19140","Potra2n9c19423","Potra2n9c19533","Potra2n10c20165","Potra2n10c20191","Potra2n10c20229","Potra2n10c20260","Potra2n10c20266","Potra2n10c20300","Potra2n10c20325","Potra2n10c20573","Potra2n10c20647","Potra2n10c20685","Potra2n10c20707","Potra2n10c20744","Potra2n10c20751","Potra2n10c20771","Potra2n10c20862","Potra2n10c20897","Potra2n10c21072","Potra2n10c21095","Potra2n10c21105","Potra2n10c21160","Potra2n10c21274","Potra2n10c21275","Potra2n10c21300","Potra2n10c21322","Potra2n10c21359","Potra2n10c21437","Potra2n10c21463","Potra2n10c21474","Potra2n10c21498","Potra2n10c21507","Potra2n10c21520","Potra2n10c21570","Potra2n10c21591","Potra2n10c21592","Potra2n10c21599","Potra2n10c21660","Potra2n10c21722","Potra2n10c21730","Potra2n10c21743","Potra2n10c21820","Potra2n10c21831","Potra2n10c21833","Potra2n10c21836","Potra2n10c21922","Potra2n10c21923","Potra2n10c21975","Potra2n10c22015","Potra2n10c22035","Potra2n10c22052","Potra2n10c22084","Potra2n10c22118","Potra2n10c22122","Potra2n10c22189","Potra2n10c22204","Potra2n10c22310","Potra2n10c22313","Potra2n10c22322","Potra2n10c22325","Potra2n114s34576","Potra2n11c22467")
-spruceRayTr3 <- c("Potra2n11c22476","Potra2n11c22494","Potra2n11c22557","Potra2n11c22603","Potra2n11c22604","Potra2n11c22606","Potra2n11c22784","Potra2n11c22835","Potra2n11c22882","Potra2n11c23028","Potra2n11c23077","Potra2n11c23127","Potra2n11c23138","Potra2n11c23211","Potra2n11c23286","Potra2n11c23312","Potra2n11c23365","Potra2n11c23508","Potra2n11c23571","Potra2n11c23579","Potra2n11c23666","Potra2n125s34636","Potra2n127s34655","Potra2n12c23689","Potra2n12c23757","Potra2n12c23816","Potra2n12c23853","Potra2n12c23855","Potra2n12c23994","Potra2n12c24049","Potra2n12c24060","Potra2n12c24131","Potra2n12c24144","Potra2n12c24186","Potra2n12c24199","Potra2n12c24335","Potra2n12c24339","Potra2n12c24367","Potra2n12c24379","Potra2n12c24384","Potra2n12c24404","Potra2n12c24427","Potra2n12c24441","Potra2n12c24517","Potra2n12c24532","Potra2n12c24538","Potra2n12c24612","Potra2n12c24670","Potra2n12c24687","Potra2n12c24721","Potra2n12c24732","Potra2n12c24818","Potra2n12c24842","Potra2n1382s37016","Potra2n13c24957","Potra2n13c24972","Potra2n13c25090","Potra2n13c25121","Potra2n13c25145","Potra2n13c25159","Potra2n13c25166","Potra2n13c25338","Potra2n13c25380","Potra2n13c25424","Potra2n13c25491","Potra2n13c25492","Potra2n13c25527","Potra2n13c25548","Potra2n13c25560","Potra2n13c25644","Potra2n13c25739","Potra2n13c25767","Potra2n13c25775","Potra2n13c25779","Potra2n13c25806","Potra2n13c25836","Potra2n13c25852","Potra2n13c25857","Potra2n13c25878","Potra2n13c25913","Potra2n13c25936","Potra2n13c25966","Potra2n13c25967","Potra2n13c25970","Potra2n13c25994","Potra2n13c26042","Potra2n13c26051","Potra2n13c26059","Potra2n13c26119","Potra2n13c26192","Potra2n13c26209","Potra2n13c26226","Potra2n13c26229","Potra2n13c26242","Potra2n13c26248","Potra2n13c26285","Potra2n14c26333","Potra2n14c26348","Potra2n14c26359","Potra2n14c26431")
-spruceRayTr4 <- c("Potra2n14c26467","Potra2n14c26485","Potra2n14c26516","Potra2n14c26618","Potra2n14c26675","Potra2n14c26743","Potra2n14c26832","Potra2n14c26856","Potra2n14c26866","Potra2n14c26958","Potra2n14c26992","Potra2n14c27003","Potra2n14c27008","Potra2n14c27021","Potra2n14c27046","Potra2n14c27052","Potra2n14c27098","Potra2n14c27113","Potra2n14c27121","Potra2n14c27145","Potra2n14c27148","Potra2n14c27152","Potra2n14c27153","Potra2n14c27155","Potra2n14c27163","Potra2n14c27184","Potra2n14c27273","Potra2n14c27315","Potra2n14c27329","Potra2n14c27333","Potra2n14c27364","Potra2n14c27385","Potra2n14c27391","Potra2n14c27414","Potra2n14c27415","Potra2n14c27424","Potra2n14c27525","Potra2n14c27554","Potra2n14c27567","Potra2n14c27591","Potra2n14c27614","Potra2n14c27615","Potra2n14c27724","Potra2n14c27730","Potra2n14c27734","Potra2n14c27740","Potra2n14c27770","Potra2n14c27875","Potra2n14c27923","Potra2n15c27955","Potra2n15c27966","Potra2n15c27986","Potra2n15c28016","Potra2n15c28186","Potra2n15c28228","Potra2n15c28377","Potra2n15c28378","Potra2n15c28441","Potra2n15c28495","Potra2n15c28525","Potra2n15c28548","Potra2n15c28557","Potra2n15c28615","Potra2n15c28658","Potra2n15c28691","Potra2n15c28712","Potra2n15c28715","Potra2n15c28720","Potra2n15c28726","Potra2n15c28878","Potra2n15c29110","Potra2n15c29111","Potra2n15c29165","Potra2n15c29185","Potra2n16c29261","Potra2n16c29278","Potra2n16c29310","Potra2n16c29402","Potra2n16c29415","Potra2n16c29422","Potra2n16c29446","Potra2n16c29468","Potra2n16c29496","Potra2n16c29604","Potra2n16c29676","Potra2n16c29756","Potra2n16c29764","Potra2n16c29774","Potra2n16c29784","Potra2n16c29820","Potra2n16c29838","Potra2n16c29846","Potra2n16c29988","Potra2n16c29994","Potra2n16c30005","Potra2n16c30033","Potra2n16c30194","Potra2n16c30255","Potra2n16c30265","Potra2n16c30335")
-spruceRayTr5 <- c("Potra2n16c30429","Potra2n16c30433","Potra2n16c30440","Potra2n16c30478","Potra2n16c30498","Potra2n16c30538","Potra2n16c30576","Potra2n17c30702","Potra2n17c30712","Potra2n17c30724","Potra2n17c30734","Potra2n17c30881","Potra2n17c30925","Potra2n17c31005","Potra2n17c31006","Potra2n17c31045","Potra2n17c31087","Potra2n17c31136","Potra2n17c31251","Potra2n17c31325","Potra2n17c31340","Potra2n17c31519","Potra2n17c31576","Potra2n17c31608","Potra2n17c31704","Potra2n17c31721","Potra2n17c31746","Potra2n17c31878","Potra2n18c31937","Potra2n18c31961","Potra2n18c31962","Potra2n18c31990","Potra2n18c31991","Potra2n18c32071","Potra2n18c32074","Potra2n18c32254","Potra2n18c32329","Potra2n18c32341","Potra2n18c32355","Potra2n18c32363","Potra2n18c32504","Potra2n18c32529","Potra2n18c32575","Potra2n18c32577","Potra2n18c32638","Potra2n18c32655","Potra2n18c32662","Potra2n18c32700","Potra2n18c32718","Potra2n18c32854","Potra2n18c32857","Potra2n18c32896","Potra2n18c32915","Potra2n18c32946","Potra2n18c32962","Potra2n18c33112","Potra2n18c33138","Potra2n18c33228","Potra2n197s34850","Potra2n19c33270","Potra2n19c33324","Potra2n19c33616","Potra2n19c33629","Potra2n19c33641","Potra2n19c33757","Potra2n19c33873","Potra2n19c33899","Potra2n19c33908","Potra2n19c33932","Potra2n19c34014","Potra2n19c34045","Potra2n19c34172","Potra2n1c1015","Potra2n1c1069","Potra2n1c1096","Potra2n1c1101","Potra2n1c1166","Potra2n1c118","Potra2n1c1241","Potra2n1c1270","Potra2n1c1278","Potra2n1c1310","Potra2n1c1322","Potra2n1c1335","Potra2n1c1353","Potra2n1c1402","Potra2n1c1404","Potra2n1c1412","Potra2n1c1422","Potra2n1c1432","Potra2n1c1433","Potra2n1c1471","Potra2n1c1512","Potra2n1c1538","Potra2n1c1675","Potra2n1c1794","Potra2n1c1817","Potra2n1c1878","Potra2n1c1955","Potra2n1c2149")
-spruceRayTr6 <- c("Potra2n1c2236","Potra2n1c2258","Potra2n1c2279","Potra2n1c2298","Potra2n1c2306","Potra2n1c2320","Potra2n1c2329","Potra2n1c235","Potra2n1c239","Potra2n1c2390","Potra2n1c2407","Potra2n1c257","Potra2n1c2592","Potra2n1c2604","Potra2n1c2612","Potra2n1c2671","Potra2n1c269","Potra2n1c2716","Potra2n1c2755","Potra2n1c2788","Potra2n1c2792","Potra2n1c2826","Potra2n1c2841","Potra2n1c2877","Potra2n1c2893","Potra2n1c2905","Potra2n1c2923","Potra2n1c2947","Potra2n1c3071","Potra2n1c309","Potra2n1c3102","Potra2n1c315","Potra2n1c3159","Potra2n1c3172","Potra2n1c3210","Potra2n1c3248","Potra2n1c3256","Potra2n1c3284","Potra2n1c3308","Potra2n1c340","Potra2n1c3484","Potra2n1c3517","Potra2n1c353","Potra2n1c3607","Potra2n1c3695","Potra2n1c381","Potra2n1c3842","Potra2n1c3973","Potra2n1c436","Potra2n1c466","Potra2n1c513","Potra2n1c568","Potra2n1c593","Potra2n1c6","Potra2n1c642","Potra2n1c659","Potra2n1c665","Potra2n1c680","Potra2n1c681","Potra2n1c698","Potra2n1c789","Potra2n1c815","Potra2n1c886","Potra2n1c896","Potra2n1c944","Potra2n1c96","Potra2n222s35010","Potra2n227s35020","Potra2n229s35029","Potra2n267s35164","Potra2n276s35179","Potra2n278s35182","Potra2n287s35199","Potra2n297s35247","Potra2n299s35255","Potra2n299s35256","Potra2n2c4048","Potra2n2c4099","Potra2n2c4121","Potra2n2c4126","Potra2n2c4214","Potra2n2c4279","Potra2n2c4370","Potra2n2c4450","Potra2n2c4576","Potra2n2c4595","Potra2n2c4610","Potra2n2c4709","Potra2n2c4809","Potra2n2c4833","Potra2n2c4852","Potra2n2c4878","Potra2n2c4925","Potra2n2c4947","Potra2n2c4958","Potra2n2c4976","Potra2n2c5012","Potra2n2c5046","Potra2n2c5062","Potra2n2c5074")
-spruceRayTr7 <- c("Potra2n2c5099","Potra2n2c5124","Potra2n2c5128","Potra2n2c5135","Potra2n2c5148","Potra2n2c5202","Potra2n2c5205","Potra2n2c5274","Potra2n2c5279","Potra2n2c5333","Potra2n2c5346","Potra2n2c5411","Potra2n2c5421","Potra2n2c5449","Potra2n2c5472","Potra2n2c5503","Potra2n2c5556","Potra2n2c5566","Potra2n2c5568","Potra2n2c5622","Potra2n2c5656","Potra2n2c5676","Potra2n2c5761","Potra2n2c5842","Potra2n2c5909","Potra2n2c5920","Potra2n2c5981","Potra2n2c5994","Potra2n2c5998","Potra2n2c6002","Potra2n2c6004","Potra2n2c6024","Potra2n2c6115","Potra2n2c6120","Potra2n2c6133","Potra2n2c6135","Potra2n2c6169","Potra2n2c6220","Potra2n2c6258","Potra2n2c6284","Potra2n2c6360","Potra2n2c6363","Potra2n2c6376","Potra2n2c6379","Potra2n2c6436","Potra2n2c6445","Potra2n308s35281","Potra2n3c6469","Potra2n3c6572","Potra2n3c6588","Potra2n3c6624","Potra2n3c6646","Potra2n3c6670","Potra2n3c6683","Potra2n3c6714","Potra2n3c6794","Potra2n3c6948","Potra2n3c7031","Potra2n3c7099","Potra2n3c7188","Potra2n3c7293","Potra2n3c7297","Potra2n3c7308","Potra2n3c7313","Potra2n3c7316","Potra2n3c7324","Potra2n3c7329","Potra2n3c7394","Potra2n3c7423","Potra2n3c7471","Potra2n3c7480","Potra2n3c7491","Potra2n3c7499","Potra2n3c7526","Potra2n3c7528","Potra2n3c7538","Potra2n3c7546","Potra2n3c7562","Potra2n3c7570","Potra2n3c7582","Potra2n3c7589","Potra2n3c7617","Potra2n3c7651","Potra2n3c7730","Potra2n3c7784","Potra2n3c7788","Potra2n3c7822","Potra2n3c7854","Potra2n3c7867","Potra2n3c7894","Potra2n3c7912","Potra2n3c7917","Potra2n3c7942","Potra2n3c7999","Potra2n3c8087","Potra2n3c8122","Potra2n3c8137","Potra2n3c8177","Potra2n3c8335")
-spruceRayTr8 <- c("Potra2n3c8391","Potra2n414s35574","Potra2n415s35581","Potra2n430s35655","Potra2n458s35734","Potra2n4c10014","Potra2n4c10076","Potra2n4c10090","Potra2n4c10204","Potra2n4c10293","Potra2n4c10368","Potra2n4c10419","Potra2n4c10420","Potra2n4c10425","Potra2n4c10440","Potra2n4c10443","Potra2n4c10456","Potra2n4c10458","Potra2n4c10470","Potra2n4c10474","Potra2n4c8462","Potra2n4c8533","Potra2n4c8663","Potra2n4c8711","Potra2n4c8713","Potra2n4c8741","Potra2n4c8781","Potra2n4c8822","Potra2n4c8877","Potra2n4c8949","Potra2n4c8982","Potra2n4c9003","Potra2n4c9013","Potra2n4c9046","Potra2n4c9047","Potra2n4c9051","Potra2n4c9236","Potra2n4c9254","Potra2n4c9256","Potra2n4c9358","Potra2n4c9410","Potra2n4c9473","Potra2n4c9490","Potra2n4c9495","Potra2n4c9531","Potra2n4c9650","Potra2n4c9657","Potra2n4c9792","Potra2n4c9944","Potra2n554s35929","Potra2n555s35940","Potra2n5c10552","Potra2n5c10571","Potra2n5c10576","Potra2n5c10662","Potra2n5c10762","Potra2n5c10857","Potra2n5c10867","Potra2n5c10945","Potra2n5c10963","Potra2n5c11034","Potra2n5c11089","Potra2n5c11131","Potra2n5c11142","Potra2n5c11355","Potra2n5c11412","Potra2n5c11439","Potra2n5c11529","Potra2n5c11604","Potra2n5c11738","Potra2n5c11799","Potra2n5c11806","Potra2n5c11817","Potra2n5c11858","Potra2n5c11861","Potra2n5c11862","Potra2n5c11897","Potra2n5c11925","Potra2n5c11928","Potra2n5c11929","Potra2n5c11936","Potra2n5c11975","Potra2n5c11981","Potra2n5c11982","Potra2n5c12043","Potra2n5c12071","Potra2n5c12104","Potra2n5c12140","Potra2n5c12197","Potra2n5c12198","Potra2n5c12253","Potra2n5c12269","Potra2n5c12298","Potra2n5c12333","Potra2n5c12337","Potra2n5c12426","Potra2n5c12475","Potra2n5c12527","Potra2n5c12559","Potra2n5c12563")
-spruceRayTr9 <- c("Potra2n5c12566","Potra2n5c12638","Potra2n5c12779","Potra2n607s36133","Potra2n649s36266","Potra2n663s36332","Potra2n673s36388","Potra2n680s36431","Potra2n680s36436","Potra2n6c12873","Potra2n6c12954","Potra2n6c13024","Potra2n6c13054","Potra2n6c13085","Potra2n6c13108","Potra2n6c13122","Potra2n6c13144","Potra2n6c13148","Potra2n6c13224","Potra2n6c13225","Potra2n6c13236","Potra2n6c13257","Potra2n6c13265","Potra2n6c13269","Potra2n6c13337","Potra2n6c13346","Potra2n6c13398","Potra2n6c13448","Potra2n6c13473","Potra2n6c13485","Potra2n6c13599","Potra2n6c13601","Potra2n6c13637","Potra2n6c13689","Potra2n6c13721","Potra2n6c13807","Potra2n6c13821","Potra2n6c13822","Potra2n6c13871","Potra2n6c13903","Potra2n6c13999","Potra2n6c14012","Potra2n6c14014","Potra2n6c14043","Potra2n6c14045","Potra2n6c14048","Potra2n6c14073","Potra2n6c14105","Potra2n6c14108","Potra2n6c14152","Potra2n6c14229","Potra2n6c14303","Potra2n6c14312","Potra2n6c14354","Potra2n6c14387","Potra2n6c14527","Potra2n6c14536","Potra2n6c14561","Potra2n6c14570","Potra2n6c14653","Potra2n6c14679","Potra2n6c14720","Potra2n6c14764","Potra2n6c14782","Potra2n6c14871","Potra2n6c14898","Potra2n6c14903","Potra2n6c14919","Potra2n6c14972","Potra2n6c14982","Potra2n6c15022","Potra2n6c15056","Potra2n6c15104","Potra2n6c15122","Potra2n6c15203","Potra2n6c15238","Potra2n6c15260","Potra2n725s36600","Potra2n7c15400","Potra2n7c15450","Potra2n7c15474","Potra2n7c15507","Potra2n7c15527","Potra2n7c15569","Potra2n7c15589","Potra2n7c15668","Potra2n7c15780","Potra2n7c15802","Potra2n7c15816","Potra2n7c15818","Potra2n7c15898","Potra2n7c15899","Potra2n7c15901","Potra2n7c15973","Potra2n7c15995","Potra2n7c16079","Potra2n7c16269","Potra2n7c16287","Potra2n7c16306","Potra2n7c16323")
-spruceRayTr10 <- c("Potra2n7c16338","Potra2n7c16361","Potra2n7c16393","Potra2n7c16453","Potra2n7c16472","Potra2n7c16516","Potra2n7c16522","Potra2n7c16571","Potra2n7c16588","Potra2n7c16596","Potra2n7c16638","Potra2n812s36782","Potra2n81s34527","Potra2n8c16664","Potra2n8c16708","Potra2n8c16810","Potra2n8c16845","Potra2n8c16875","Potra2n8c16920","Potra2n8c17019","Potra2n8c17045","Potra2n8c17057","Potra2n8c17112","Potra2n8c17148","Potra2n8c17160","Potra2n8c17348","Potra2n8c17454","Potra2n8c17468","Potra2n8c17574","Potra2n8c17594","Potra2n8c17603","Potra2n8c17615","Potra2n8c17675","Potra2n8c17681","Potra2n8c17719","Potra2n8c17784","Potra2n8c17805","Potra2n8c17831","Potra2n8c17852","Potra2n8c17896","Potra2n8c17905","Potra2n8c17927","Potra2n8c17928","Potra2n8c17941","Potra2n8c17956","Potra2n8c18007","Potra2n8c18015","Potra2n8c18146","Potra2n8c18158","Potra2n8c18263","Potra2n8c18295","Potra2n8c18424","Potra2n8c18430","Potra2n8c18440","Potra2n8c18443","Potra2n8c18448","Potra2n8c18500","Potra2n8c18560","Potra2n8c18623","Potra2n9c18733","Potra2n9c18750","Potra2n9c18762","Potra2n9c18803","Potra2n9c18855","Potra2n9c18907","Potra2n9c18918","Potra2n9c18950","Potra2n9c19176","Potra2n9c19291","Potra2n9c19446","Potra2n9c19497","Potra2n9c19546","Potra2n9c19547","Potra2n9c19607","Potra2n9c19644","Potra2n9c19713","Potra2n9c19764","Potra2n9c19779","Potra2n9c19954","Potra2n9c19988","Potra2n9c20002","Potra2n9c20004","Potra2n9c20073","Potra2n9c20077")
-#'
-#' 5.5. For vessels 
-#' right homolog:  "Potra2n6c13361",
-acl5 <- c("Potra2n10c21673", "Potra2n6c13361", "Potra2n8c18019")
-wat1 <- c("Potra2n5c10753","Potra2n2c6181")
-#' XCP: xylem cysteine protease inhibitor: xcp2, xcp2, xcp1, xbcp3
-#' XCPs were used as markers in Li et al., 2021; Chen et al, 2021 as well
-xcp <-c("Potra2n5c10536","Potra2n2c6410", "Potra2n4c10232","Potra2n5c10760")
-
-#' vnd
-vnd <- c("Potra2n114s34556","Potra2n12c24750","Potra2n13c25337","Potra2n19c33624","Potra2n1c1031","Potra2n3c7486","Potra2n5c11773","Potra2n7c16511")
-
-rnaseiii <- c("Potra2n8c17393")
-
-#' Kubo et al, 2005- highly exp vessel genes
-kv1 <- c("Potra2n10c20166","Potra2n10c20177","Potra2n10c20179","Potra2n10c20207","Potra2n10c20245","Potra2n10c20365","Potra2n10c20374","Potra2n10c20418","Potra2n10c20429","Potra2n10c20439","Potra2n10c20451","Potra2n10c20498","Potra2n10c20596","Potra2n10c20597","Potra2n10c20630","Potra2n10c20674","Potra2n10c20691","Potra2n10c20693","Potra2n10c20721","Potra2n10c20763","Potra2n10c20785","Potra2n10c20793","Potra2n10c20799","Potra2n10c20867","Potra2n10c20879","Potra2n10c20906","Potra2n10c20937","Potra2n10c20942","Potra2n10c20945","Potra2n10c21009","Potra2n10c21010","Potra2n10c21038","Potra2n10c21146","Potra2n10c21157","Potra2n10c21199","Potra2n10c21200","Potra2n10c21213","Potra2n10c21336","Potra2n10c21357","Potra2n10c21382","Potra2n10c21396","Potra2n10c21407","Potra2n10c21446","Potra2n10c21492","Potra2n10c21500","Potra2n10c21625","Potra2n10c21632","Potra2n10c21671","Potra2n10c21674","Potra2n10c21679","Potra2n10c21716","Potra2n10c21746","Potra2n10c21790","Potra2n10c21803","Potra2n10c21806","Potra2n10c21807","Potra2n10c21818","Potra2n10c21835","Potra2n10c21927","Potra2n10c21942","Potra2n10c21959","Potra2n10c21995","Potra2n10c22004","Potra2n10c22020","Potra2n10c22057","Potra2n10c22067","Potra2n10c22070","Potra2n10c22074","Potra2n10c22101","Potra2n10c22165","Potra2n10c22170","Potra2n10c22171","Potra2n10c22236","Potra2n10c22328","Potra2n11c22448","Potra2n11c22480","Potra2n11c22516","Potra2n11c22536","Potra2n11c22589","Potra2n11c22595","Potra2n11c22665","Potra2n11c22700","Potra2n11c22790","Potra2n11c22845","Potra2n11c22891","Potra2n11c22895","Potra2n11c22906","Potra2n11c23034","Potra2n11c23047","Potra2n11c23054","Potra2n11c23130","Potra2n11c23178","Potra2n11c23227","Potra2n11c23272","Potra2n11c23290","Potra2n11c23297","Potra2n11c23331","Potra2n11c23368","Potra2n11c23383","Potra2n11c23403")
-kv2 <- c("Potra2n11c23410","Potra2n11c23519","Potra2n11c23578","Potra2n11c23667","Potra2n124s34585","Potra2n124s34599","Potra2n124s34605","Potra2n127s34666","Potra2n12c23799","Potra2n12c23846","Potra2n12c23922","Potra2n12c24080","Potra2n12c24135","Potra2n12c24136","Potra2n12c24157","Potra2n12c24164","Potra2n12c24302","Potra2n12c24337","Potra2n12c24397","Potra2n12c24526","Potra2n12c24553","Potra2n12c24708","Potra2n12c24757","Potra2n12c24816","Potra2n12c24835","Potra2n12c24881","Potra2n13c24965","Potra2n13c25007","Potra2n13c25044","Potra2n13c25049","Potra2n13c25080","Potra2n13c25088","Potra2n13c25146","Potra2n13c25193","Potra2n13c25214","Potra2n13c25215","Potra2n13c25216","Potra2n13c25337","Potra2n13c25385","Potra2n13c25388","Potra2n13c25487","Potra2n13c25574","Potra2n13c25580","Potra2n13c25637","Potra2n13c25646","Potra2n13c25675","Potra2n13c25681","Potra2n13c25693","Potra2n13c25716","Potra2n13c25832","Potra2n13c25838","Potra2n13c25856","Potra2n13c25960","Potra2n13c25989","Potra2n13c25991","Potra2n13c26056","Potra2n13c26063","Potra2n13c26129","Potra2n13c26136","Potra2n13c26189","Potra2n13c26190","Potra2n13c26280","Potra2n1491s37102","Potra2n14c26369","Potra2n14c26421","Potra2n14c26512","Potra2n14c26579","Potra2n14c26614","Potra2n14c26635","Potra2n14c26734","Potra2n14c26754","Potra2n14c26781","Potra2n14c26806","Potra2n14c26833","Potra2n14c26898","Potra2n14c26987","Potra2n14c26999","Potra2n14c27001","Potra2n14c27069","Potra2n14c27099","Potra2n14c27137","Potra2n14c27174","Potra2n14c27234","Potra2n14c27241","Potra2n14c27270","Potra2n14c27280","Potra2n14c27282","Potra2n14c27319","Potra2n14c27376","Potra2n14c27425","Potra2n14c27434","Potra2n14c27493","Potra2n14c27534","Potra2n14c27588","Potra2n14c27590","Potra2n14c27624","Potra2n14c27692","Potra2n14c27766","Potra2n14c27768")
-kv3 <- c("Potra2n14c27771","Potra2n14c27793","Potra2n14c27825","Potra2n14c27851","Potra2n1538s37128","Potra2n15c28045","Potra2n15c28064","Potra2n15c28070","Potra2n15c28085","Potra2n15c28144","Potra2n15c28191","Potra2n15c28257","Potra2n15c28265","Potra2n15c28293","Potra2n15c28349","Potra2n15c28361","Potra2n15c28362","Potra2n15c28389","Potra2n15c28407","Potra2n15c28431","Potra2n15c28440","Potra2n15c28460","Potra2n15c28532","Potra2n15c28618","Potra2n15c28627","Potra2n15c28659","Potra2n15c28670","Potra2n15c28683","Potra2n15c28690","Potra2n15c28700","Potra2n15c28759","Potra2n15c28772","Potra2n15c28783","Potra2n15c28797","Potra2n15c28819","Potra2n15c28839","Potra2n15c28853","Potra2n15c28883","Potra2n15c28996","Potra2n15c29007","Potra2n15c29118","Potra2n15c29205","Potra2n15c29215","Potra2n16c29392","Potra2n16c29409","Potra2n16c29448","Potra2n16c29456","Potra2n16c29487","Potra2n16c29489","Potra2n16c29520","Potra2n16c29550","Potra2n16c29630","Potra2n16c29657","Potra2n16c29659","Potra2n16c29660","Potra2n16c29682","Potra2n16c29762","Potra2n16c29769","Potra2n16c29964","Potra2n16c29970","Potra2n16c30019","Potra2n16c30073","Potra2n16c30211","Potra2n16c30250","Potra2n16c30283","Potra2n16c30285","Potra2n16c30308","Potra2n16c30309","Potra2n16c30317","Potra2n16c30384","Potra2n16c30404","Potra2n16c30432","Potra2n16c30493","Potra2n16c30495","Potra2n16c30513","Potra2n16c30533","Potra2n16c30555","Potra2n16c30559","Potra2n16c30565","Potra2n17c30577","Potra2n17c30594","Potra2n17c30595","Potra2n17c30600","Potra2n17c30641","Potra2n17c30725","Potra2n17c30735","Potra2n17c30794","Potra2n17c30819","Potra2n17c30829","Potra2n17c30832","Potra2n17c30838","Potra2n17c30852","Potra2n17c30942","Potra2n17c30973","Potra2n17c31028","Potra2n17c31043","Potra2n17c31058","Potra2n17c31090","Potra2n17c31115")
-kv4 <- c("Potra2n17c31183","Potra2n17c31186","Potra2n17c31199","Potra2n17c31200","Potra2n17c31217","Potra2n17c31230","Potra2n17c31299","Potra2n17c31373","Potra2n17c31393","Potra2n17c31547","Potra2n17c31566","Potra2n17c31567","Potra2n17c31692","Potra2n17c31693","Potra2n17c31708","Potra2n17c31792","Potra2n17c31813","Potra2n17c31851","Potra2n17c31885","Potra2n17c31889","Potra2n17c31896","Potra2n18c32050","Potra2n18c32070","Potra2n18c32073","Potra2n18c32076","Potra2n18c32084","Potra2n18c32085","Potra2n18c32090","Potra2n18c32125","Potra2n18c32199","Potra2n18c32204","Potra2n18c32243","Potra2n18c32311","Potra2n18c32352","Potra2n18c32366","Potra2n18c32377","Potra2n18c32420","Potra2n18c32438","Potra2n18c32441","Potra2n18c32459","Potra2n18c32487","Potra2n18c32538","Potra2n18c32582","Potra2n18c32610","Potra2n18c32620","Potra2n18c32628","Potra2n18c32669","Potra2n18c32687","Potra2n18c32694","Potra2n18c32706","Potra2n18c32720","Potra2n18c32732","Potra2n18c32757","Potra2n18c32798","Potra2n18c32811","Potra2n18c32821","Potra2n18c32982","Potra2n18c33064","Potra2n18c33075","Potra2n18c33119","Potra2n18c33156","Potra2n18c33233","Potra2n18c33235","Potra2n197s34878","Potra2n197s34884","Potra2n199s34902","Potra2n19c33276","Potra2n19c33316","Potra2n19c33517","Potra2n19c33543","Potra2n19c33601","Potra2n19c33649","Potra2n19c33689","Potra2n19c33695","Potra2n19c33753","Potra2n19c33805","Potra2n19c33866","Potra2n19c33869","Potra2n19c33890","Potra2n19c33898","Potra2n19c33900","Potra2n19c33914","Potra2n19c34042","Potra2n19c34083","Potra2n19c34157","Potra2n19c34178","Potra2n19c34180","Potra2n19c34194","Potra2n19c34228","Potra2n19c34244","Potra2n19c34307","Potra2n19c34409","Potra2n19c34417","Potra2n1c1010","Potra2n1c1017","Potra2n1c1043","Potra2n1c1044","Potra2n1c1063","Potra2n1c1065")
-kv5 <- c("Potra2n1c1073","Potra2n1c1084","Potra2n1c1091","Potra2n1c1093","Potra2n1c11","Potra2n1c1109","Potra2n1c1243","Potra2n1c1272","Potra2n1c1295","Potra2n1c1330","Potra2n1c1383","Potra2n1c1392","Potra2n1c1397","Potra2n1c1406","Potra2n1c1431","Potra2n1c1535","Potra2n1c1536","Potra2n1c1635","Potra2n1c1728","Potra2n1c1733","Potra2n1c1811","Potra2n1c1823","Potra2n1c1849","Potra2n1c1987","Potra2n1c2007","Potra2n1c2010","Potra2n1c204","Potra2n1c2065","Potra2n1c2130","Potra2n1c2228","Potra2n1c2232","Potra2n1c2401","Potra2n1c2410","Potra2n1c2433","Potra2n1c2443","Potra2n1c2519","Potra2n1c2605","Potra2n1c2625","Potra2n1c2633","Potra2n1c265","Potra2n1c2692","Potra2n1c2735","Potra2n1c2853","Potra2n1c2952","Potra2n1c2975","Potra2n1c2980","Potra2n1c2991","Potra2n1c3013","Potra2n1c3020","Potra2n1c3029","Potra2n1c3048","Potra2n1c3057","Potra2n1c3065","Potra2n1c3074","Potra2n1c3127","Potra2n1c3140","Potra2n1c3145","Potra2n1c3235","Potra2n1c3252","Potra2n1c329","Potra2n1c3324","Potra2n1c3340","Potra2n1c3485","Potra2n1c3490","Potra2n1c3495","Potra2n1c3521","Potra2n1c3599","Potra2n1c3614","Potra2n1c3642","Potra2n1c3661","Potra2n1c370","Potra2n1c3702","Potra2n1c3805","Potra2n1c3833","Potra2n1c3854","Potra2n1c3860","Potra2n1c3966","Potra2n1c4002","Potra2n1c447","Potra2n1c451","Potra2n1c502","Potra2n1c504","Potra2n1c528","Potra2n1c551","Potra2n1c554","Potra2n1c598","Potra2n1c637","Potra2n1c644","Potra2n1c673","Potra2n1c683","Potra2n1c690","Potra2n1c710","Potra2n1c715","Potra2n1c798","Potra2n1c869","Potra2n1c875","Potra2n1c917","Potra2n1c920")
-kv6 <- c("Potra2n1c928","Potra2n1c94","Potra2n1c940","Potra2n1c942","Potra2n1c97","Potra2n203s34939","Potra2n227s35021","Potra2n246s35110","Potra2n278s35186","Potra2n280s35192","Potra2n299s35250","Potra2n2c4118","Potra2n2c4129","Potra2n2c4159","Potra2n2c4193","Potra2n2c4203","Potra2n2c4205","Potra2n2c4329","Potra2n2c4359","Potra2n2c4386","Potra2n2c4488","Potra2n2c4539","Potra2n2c4587","Potra2n2c4664","Potra2n2c4688","Potra2n2c4718","Potra2n2c4733","Potra2n2c4750","Potra2n2c4754","Potra2n2c4764","Potra2n2c4788","Potra2n2c4791","Potra2n2c4854","Potra2n2c4867","Potra2n2c4918","Potra2n2c4919","Potra2n2c4921","Potra2n2c4965","Potra2n2c4970","Potra2n2c5025","Potra2n2c5075","Potra2n2c5086","Potra2n2c5105","Potra2n2c5246","Potra2n2c5266","Potra2n2c5289","Potra2n2c5341","Potra2n2c5357","Potra2n2c5382","Potra2n2c5418","Potra2n2c5528","Potra2n2c5532","Potra2n2c5534","Potra2n2c5543","Potra2n2c5544","Potra2n2c5545","Potra2n2c5550","Potra2n2c5650","Potra2n2c5685","Potra2n2c5736","Potra2n2c5772","Potra2n2c5790","Potra2n2c5802","Potra2n2c5858","Potra2n2c5930","Potra2n2c5967","Potra2n2c6031","Potra2n2c6076","Potra2n2c6100","Potra2n2c6146","Potra2n2c6156","Potra2n2c6208","Potra2n2c6269","Potra2n2c6272","Potra2n2c6307","Potra2n2c6335","Potra2n2c6370","Potra2n2c6412","Potra2n2c6425","Potra2n2c6439","Potra2n320s35306","Potra2n344s35356","Potra2n373s35470","Potra2n387s35505","Potra2n3c6525","Potra2n3c6610","Potra2n3c6734","Potra2n3c6870","Potra2n3c6879","Potra2n3c6936","Potra2n3c7027","Potra2n3c7047","Potra2n3c7049","Potra2n3c7100","Potra2n3c7228","Potra2n3c7229","Potra2n3c7256","Potra2n3c7277","Potra2n3c7278")
-kv7 <- c("Potra2n3c7307","Potra2n3c7372","Potra2n3c7388","Potra2n3c7504","Potra2n3c7567","Potra2n3c7590","Potra2n3c7603","Potra2n3c7648","Potra2n3c7664","Potra2n3c7696","Potra2n3c7705","Potra2n3c7738","Potra2n3c7748","Potra2n3c7749","Potra2n3c7757","Potra2n3c7831","Potra2n3c7843","Potra2n3c7895","Potra2n3c7901","Potra2n3c7907","Potra2n3c7919","Potra2n3c7965","Potra2n3c8050","Potra2n3c8109","Potra2n3c8116","Potra2n3c8136","Potra2n3c8138","Potra2n3c8154","Potra2n3c8220","Potra2n3c8387","Potra2n405s35548","Potra2n483s35772","Potra2n492s35803","Potra2n492s35805","Potra2n494s35807","Potra2n494s35809","Potra2n4c10000","Potra2n4c10032","Potra2n4c10071","Potra2n4c10091","Potra2n4c10098","Potra2n4c10128","Potra2n4c10249","Potra2n4c10269","Potra2n4c10276","Potra2n4c10299","Potra2n4c10336","Potra2n4c10366","Potra2n4c10378","Potra2n4c10441","Potra2n4c10459","Potra2n4c10466","Potra2n4c10469","Potra2n4c10476","Potra2n4c8433","Potra2n4c8440","Potra2n4c8442","Potra2n4c8491","Potra2n4c8589","Potra2n4c8591","Potra2n4c8677","Potra2n4c8698","Potra2n4c8715","Potra2n4c8799","Potra2n4c8843","Potra2n4c8895","Potra2n4c8898","Potra2n4c8913","Potra2n4c8915","Potra2n4c8987","Potra2n4c9004","Potra2n4c9007","Potra2n4c9089","Potra2n4c9096","Potra2n4c9168","Potra2n4c9188","Potra2n4c9202","Potra2n4c9259","Potra2n4c9279","Potra2n4c9282","Potra2n4c9288","Potra2n4c9351","Potra2n4c9382","Potra2n4c9409","Potra2n4c9486","Potra2n4c9489","Potra2n4c9573","Potra2n4c9636","Potra2n4c9638","Potra2n4c9643","Potra2n4c9684","Potra2n4c9691","Potra2n4c9860","Potra2n4c9874","Potra2n4c9883","Potra2n4c9899","Potra2n4c9907","Potra2n4c9943","Potra2n4c9981")
-kv8 <- c("Potra2n502s35831","Potra2n515s35865","Potra2n555s35941","Potra2n581s36023","Potra2n5c10499","Potra2n5c10501","Potra2n5c10592","Potra2n5c10604","Potra2n5c10699","Potra2n5c10706","Potra2n5c10717","Potra2n5c10721","Potra2n5c10764","Potra2n5c10799","Potra2n5c10819","Potra2n5c10826","Potra2n5c10846","Potra2n5c10850","Potra2n5c10955","Potra2n5c10972","Potra2n5c11048","Potra2n5c11105","Potra2n5c11127","Potra2n5c11133","Potra2n5c11168","Potra2n5c11176","Potra2n5c11192","Potra2n5c11223","Potra2n5c11291","Potra2n5c11293","Potra2n5c11344","Potra2n5c11359","Potra2n5c11364","Potra2n5c11367","Potra2n5c11395","Potra2n5c11434","Potra2n5c11545","Potra2n5c11585","Potra2n5c11590","Potra2n5c11652","Potra2n5c11677","Potra2n5c11699","Potra2n5c11734","Potra2n5c11819","Potra2n5c11930","Potra2n5c12010","Potra2n5c12114","Potra2n5c12152","Potra2n5c12216","Potra2n5c12237","Potra2n5c12246","Potra2n5c12249","Potra2n5c12299","Potra2n5c12377","Potra2n5c12402","Potra2n5c12496","Potra2n5c12551","Potra2n5c12618","Potra2n5c12671","Potra2n5c12725","Potra2n5c12814","Potra2n620s36180","Potra2n628s36211","Potra2n637s36240","Potra2n649s36265","Potra2n659s36321","Potra2n667s36349","Potra2n680s36411","Potra2n690s36498","Potra2n6c12846","Potra2n6c12925","Potra2n6c12940","Potra2n6c13066","Potra2n6c13070","Potra2n6c13094","Potra2n6c13204","Potra2n6c13214","Potra2n6c13218","Potra2n6c13221","Potra2n6c13222","Potra2n6c13315","Potra2n6c13319","Potra2n6c13321","Potra2n6c13360","Potra2n6c13402","Potra2n6c13433","Potra2n6c13452","Potra2n6c13518","Potra2n6c13556","Potra2n6c13603","Potra2n6c13615","Potra2n6c13666","Potra2n6c13693","Potra2n6c13778","Potra2n6c13785","Potra2n6c13799","Potra2n6c13971","Potra2n6c13976","Potra2n6c13984")
-kv9 <- c("Potra2n6c13986","Potra2n6c13989","Potra2n6c14024","Potra2n6c14095","Potra2n6c14096","Potra2n6c14100","Potra2n6c14103","Potra2n6c14170","Potra2n6c14185","Potra2n6c14201","Potra2n6c14209","Potra2n6c14244","Potra2n6c14265","Potra2n6c14306","Potra2n6c14358","Potra2n6c14386","Potra2n6c14411","Potra2n6c14482","Potra2n6c14515","Potra2n6c14588","Potra2n6c14610","Potra2n6c14618","Potra2n6c14750","Potra2n6c14751","Potra2n6c14752","Potra2n6c14793","Potra2n6c14807","Potra2n6c14900","Potra2n6c14905","Potra2n6c14918","Potra2n6c14931","Potra2n6c14944","Potra2n6c14962","Potra2n6c14977","Potra2n6c14981","Potra2n6c15087","Potra2n6c15161","Potra2n6c15166","Potra2n6c15188","Potra2n6c15228","Potra2n6c15326","Potra2n6c15331","Potra2n6c15353","Potra2n6c15374","Potra2n704s36535","Potra2n747s36677","Potra2n751s36687","Potra2n7c15460","Potra2n7c15516","Potra2n7c15596","Potra2n7c15643","Potra2n7c15702","Potra2n7c15775","Potra2n7c15814","Potra2n7c15897","Potra2n7c15923","Potra2n7c15986","Potra2n7c16010","Potra2n7c16051","Potra2n7c16062","Potra2n7c16072","Potra2n7c16101","Potra2n7c16131","Potra2n7c16155","Potra2n7c16161","Potra2n7c16170","Potra2n7c16179","Potra2n7c16225","Potra2n7c16242","Potra2n7c16256","Potra2n7c16257","Potra2n7c16274","Potra2n7c16281","Potra2n7c16308","Potra2n7c16342","Potra2n7c16351","Potra2n7c16353","Potra2n7c16357","Potra2n7c16365","Potra2n7c16384","Potra2n7c16441","Potra2n7c16449","Potra2n7c16468","Potra2n7c16488","Potra2n7c16542","Potra2n7c16543","Potra2n7c16573","Potra2n7c16581","Potra2n7c16632","Potra2n81s34508","Potra2n8c16670","Potra2n8c16700","Potra2n8c16745","Potra2n8c16747","Potra2n8c16804","Potra2n8c16864","Potra2n8c16905","Potra2n8c16980","Potra2n8c17037")
-kv10 <- c("Potra2n8c17110","Potra2n8c17132","Potra2n8c17138","Potra2n8c17171","Potra2n8c17192","Potra2n8c17208","Potra2n8c17220","Potra2n8c17278","Potra2n8c17301","Potra2n8c17305","Potra2n8c17351","Potra2n8c17398","Potra2n8c17428","Potra2n8c17496","Potra2n8c17502","Potra2n8c17519","Potra2n8c17547","Potra2n8c17549","Potra2n8c17602","Potra2n8c17676","Potra2n8c17715","Potra2n8c17723","Potra2n8c17730","Potra2n8c17741","Potra2n8c17799","Potra2n8c17835","Potra2n8c17851","Potra2n8c17863","Potra2n8c17877","Potra2n8c17967","Potra2n8c18080","Potra2n8c18090","Potra2n8c18114","Potra2n8c18115","Potra2n8c18120","Potra2n8c18173","Potra2n8c18193","Potra2n8c18198","Potra2n8c18235","Potra2n8c18277","Potra2n8c18333","Potra2n8c18338","Potra2n8c18362","Potra2n8c18426","Potra2n8c18427","Potra2n8c18474","Potra2n8c18484","Potra2n8c18513","Potra2n8c18556","Potra2n8c18605","Potra2n8c18613","Potra2n9c18681","Potra2n9c18725","Potra2n9c18805","Potra2n9c18826","Potra2n9c18831","Potra2n9c18884","Potra2n9c19025","Potra2n9c19071","Potra2n9c19072","Potra2n9c19153","Potra2n9c19173","Potra2n9c19207","Potra2n9c19221","Potra2n9c19248","Potra2n9c19348","Potra2n9c19365","Potra2n9c19376","Potra2n9c19384","Potra2n9c19386","Potra2n9c19390","Potra2n9c19403","Potra2n9c19410","Potra2n9c19430","Potra2n9c19450","Potra2n9c19485","Potra2n9c19619","Potra2n9c19675","Potra2n9c19729","Potra2n9c19749","Potra2n9c19776","Potra2n9c19790","Potra2n9c19792","Potra2n9c19859","Potra2n9c19895","Potra2n9c19898","Potra2n9c19900","Potra2n9c19949","Potra2n9c19995","Potra2n9c20005","Potra2n9c20034","Potra2n9c20045","Potra2n9c20067")
-# 
-#' Metacaspase5
-mc5 <- c("Potra2n8c17345","Potra2n10c20883")
+#' #' 5.2. From network gene aspwood paper
+#' # Expansins family
+#' expansin_fam <- c("Potra2n10c20623","Potra2n10c20953","Potra2n13c24992",
+#'                   "Potra2n13c25752","Potra2n16c30156","Potra2n16c30169",
+#'                   "Potra2n16c30491","Potra2n17c30722","Potra2n17c31117",
+#'                   "Potra2n17c31179","Potra2n19c33898","Potra2n1c11",
+#'                   "Potra2n1c2087","Potra2n1c3505","Potra2n1c960","Potra2n2c4734",
+#'                   "Potra2n2c4737","Potra2n2c6293","Potra2n4c9142","Potra2n4c9551",
+#'                   "Potra2n5c10644","Potra2n6c14375","Potra2n6c14588","Potra2n8c17125",
+#'                   "Potra2n8c17409","Potra2n9c18642","Potra2n9c19851","Potra2n1c1267",
+#'                   "Potra2n1c1318","Potra2n3c7743","Potra2n3c7783","Potra2n4c10039",
+#'                   "Potra2n9c18880")
 #' 
-#' 5.6. Core cell cycle TAIR
-coreCyc <- c("Potra2n2c4390","Potra2n1c2176","Potra2n1c2151","Potra2n13c25822","Potra2n1c1559","Potra2n8c17361","Potra2n12c24142","Potra2n12c24163","Potra2n5c10575","Potra2n2c6426","Potra2n735s36629","Potra2n5c11241","Potra2n2c5307","Potra2n2c6231","Potra2n9c19212","Potra2n8c17316","Potra2n10c21618","Potra2n8c17791","Potra2n5c11923","Potra2n5c11433","Potra2n5c11441","Potra2n7c16280","Potra2n6c13237","Potra2n1c2376","Potra2n9c20077","Potra2n5c10858","Potra2n1c2727","Potra2n6c13528","Potra2n3c7661","Potra2n16c30563","Potra2n6c14644","Potra2n12c24354","Potra2n6c15109","Potra2n1c257","Potra2n2c4226","Potra2n4c9630","Potra2n5c11567","Potra2n13c25044","Potra2n3c7422","Potra2n9c19647","Potra2n18c32557","Potra2n14c27002","Potra2n1c2633","Potra2n7c16154","Potra2n6c14563","Potra2n16c30120","Potra2n12c23916","Potra2n6c13129","Potra2n8c17128","Potra2n13c25612","Potra2n669s36351","Potra2n4c10173","Potra2n18c32954","Potra2n5c12590","Potra2n2c4525","Potra2n1c724","Potra2n7c15742")
-# Cell cycle genes (Zhang et al., 2021)
-g01phase <- c("Potra2n10c22352","Potra2n11c22967","Potra2n13c25403","Potra2n14c27234","Potra2n14c27322","Potra2n18c32466","Potra2n1c2151","Potra2n1c2633","Potra2n1c2837","Potra2n2c4043","Potra2n5c11567","Potra2n6c14588","Potra2n9c19242")
-g2phase <- c("Potra2n10c21070","Potra2n10c21695","Potra2n10c21833","Potra2n10c22093","Potra2n10c22145","Potra2n10c22346","Potra2n11c22815","Potra2n11c23463","Potra2n12c24927","Potra2n13c25321","Potra2n13c25579","Potra2n13c26121","Potra2n13c26208","Potra2n14c26403","Potra2n14c27462","Potra2n14c27475","Potra2n15c27972","Potra2n15c28096","Potra2n15c28656","Potra2n15c28758","Potra2n15c28945","Potra2n16c29301","Potra2n16c29689","Potra2n16c29960","Potra2n16c30306","Potra2n16c30563","Potra2n18c32638","Potra2n18c32677","Potra2n18c32912","Potra2n19c34004","Potra2n19c34102","Potra2n1c1559","Potra2n1c2018","Potra2n1c2288","Potra2n1c2573","Potra2n1c2758","Potra2n1c2942","Potra2n1c3087","Potra2n1c3141","Potra2n1c3180","Potra2n1c3295","Potra2n1c3611","Potra2n1c410","Potra2n2c4140","Potra2n2c4292","Potra2n2c4299","Potra2n2c4587","Potra2n2c4715","Potra2n2c4966","Potra2n2c5259","Potra2n2c5415","Potra2n2c5455","Potra2n2c5494","Potra2n2c5545","Potra2n2c5663","Potra2n2c6426","Potra2n372s35460","Potra2n3c7249","Potra2n3c7951","Potra2n3c7972","Potra2n3c8097","Potra2n3c8273","Potra2n4c8773","Potra2n4c9741","Potra2n5c10510","Potra2n5c10575","Potra2n5c10579","Potra2n5c11241","Potra2n5c11640","Potra2n5c12275","Potra2n680s36426","Potra2n6c14644","Potra2n6c14653","Potra2n6c14979","Potra2n6c15055","Potra2n6c15109","Potra2n7c15462","Potra2n7c16145","Potra2n8c17814","Potra2n8c17973","Potra2n8c18569","Potra2n8c18623","Potra2n9c18760","Potra2n9c19217","Potra2n9c19378","Potra2n9c20077")
-sphase <- c("Potra2n10c20260","Potra2n10c20508","Potra2n11c22684","Potra2n13c26037","Potra2n13c26116","Potra2n14c27103","Potra2n14c27106","Potra2n15c28275","Potra2n15c28844","Potra2n16c29833","Potra2n17c31198","Potra2n18c33119","Potra2n1c101","Potra2n1c2877","Potra2n1c3343","Potra2n1c3610","Potra2n2c4073","Potra2n2c4499","Potra2n2c5307","Potra2n2c6056","Potra2n3c7036","Potra2n3c7597","Potra2n4c9636","Potra2n5c10911","Potra2n5c12603","Potra2n6c13036","Potra2n6c14627","Potra2n7c15963","Potra2n7c16633","Potra2n8c16885","Potra2n8c17847","Potra2n9c19886")
-mphase <- c ("Potra2n10c20592","Potra2n10c20846","Potra2n10c21494","Potra2n10c21734","Potra2n10c22098","Potra2n11c22486","Potra2n11c22945","Potra2n11c23018","Potra2n12c24163","Potra2n13c25058","Potra2n13c25262","Potra2n13c25822","Potra2n13c25852","Potra2n14c27365","Potra2n14c27462","Potra2n14c27797","Potra2n15c29215","Potra2n16c29450","Potra2n16c30378","Potra2n16c30406","Potra2n16c30474","Potra2n17c30910","Potra2n17c31100","Potra2n17c31123","Potra2n18c32687","Potra2n19c34338","Potra2n1c2214","Potra2n1c2376","Potra2n1c2511","Potra2n1c2591","Potra2n1c3910","Potra2n1c4000","Potra2n1c671","Potra2n1c923","Potra2n2c4070","Potra2n2c4172","Potra2n3c7249","Potra2n3c7843","Potra2n4c8944","Potra2n4c8987","Potra2n5c10575","Potra2n5c10858","Potra2n5c10979","Potra2n5c11566","Potra2n5c11796","Potra2n5c11923","Potra2n5c12554","Potra2n6c12962","Potra2n6c13237","Potra2n6c13440","Potra2n6c13456","Potra2n6c14169","Potra2n6c15109","Potra2n7c15465","Potra2n7c16119","Potra2n8c17128","Potra2n8c17171","Potra2n8c17318","Potra2n8c18190","Potra2n8c18202","Potra2n8c18287","Potra2n9c19378","Potra2n9c19459","Potra2n9c19549","Potra2n6c13657", "Potra2n16c29642","Potra2n17c30791", "Potra2n6c14415")
-# s.genes <- c("Potra2n10c20508", "Potra2n1c2877")
-# g2m.genes <- c("Potra2n8c18287", "Potra2n6c12962","Potra2n5c11241","Potra2n2c6426")
-# g1.genes <- c("Potra2n14c27322", "Potra2n1c2151")
-
-#' 5.7. Genes in suppl table of Shi et al., 2017, laser microdissection paper
-Shifib <- c("Potra2n1c546","Potra2n8c16946","Potra2n10c20318","Potra2n13c24959","Potra2n1c3619","Potra2n2c4078","Potra2n5c12319","Potra2n6c14201","Potra2n7c16495","Potra2n7c15752","Potra2n8c17885","Potra2n11c23199","Potra2n11c22673","Potra2n16c30051","Potra2n16c30091","Potra2n1c452","Potra2n1c829","Potra2n1c1020","Potra2n1c2246","Potra2n1c3530","Potra2n2c4212","Potra2n3c7978","Potra2n3c7705","Potra2n3c7477","Potra2n4c8837","Potra2n4c9512","Potra2n5c11659","Potra2n5c11186","Potra2n7c15765","Potra2n7c15466","Potra2n8c16778","Potra2n9c20072","Potra2n10c21057","Potra2n13c24976","Potra2n15c28920","Potra2n16c29749","Potra2n18c32675","Potra2n1c1059","Potra2n1c2112","Potra2n1c2242","Potra2n584s36051","Potra2n5c12633","Potra2n14c27757","Potra2n17c31154","Potra2n18c32560","Potra2n758s36699")
-ShiCelWal <- c("Potra2n1c307","Potra2n3c6817","Potra2n1c1541","Potra2n2c5206","Potra2n3c7945","Potra2n3c6847","Potra2n3c6783","Potra2n4c8952","Potra2n5c11571","Potra2n6c15127","Potra2n6c14160","Potra2n6c13749","Potra2n5c11670","Potra2n9c20060","Potra2n9c19275","Potra2n9c19246","Potra2n12c23766","Potra2n12c24640","Potra2n14c26547","Potra2n14c26628")
-ShiXyl <- c("Potra2n1c953","Potra2n1c1657","Potra2n1c2250","Potra2n1c2305","Potra2n1c3191","Potra2n1c3797","Potra2n1c4016","Potra2n2c6375","Potra2n2c6070","Potra2n2c5746","Potra2n2c5385","Potra2n2c5151","Potra2n2c5075","Potra2n14c27102","Potra2n2c4785","Potra001157g10045","Potra2n2c4080","Potra2n3c8027","Potra2n3c7305","Potra2n3c6563","Potra2n4c9127","Potra2n4c9297","Potra2n4c9868","Potra2n5c12307","Potra2n5c11773","Potra2n5c10901","Potra2n5c10869","Potra2n5c10648","Potra2n6c13965","Potra2n7c16575","Potra2n7c16511","Potra2n203s34957","Potra2n7c15498","Potra2n7c15489","Potra2n8c18444","Potra2n369s35436","Potra2n9c19727","Potra2n9c19651","Potra2n10c22314","Potra2n10c21389","Potra2n11c23287","Potra2n4c8839","Potra2n11c22968","Potra2n12c23697","Potra2n12c24046","Potra2n12c24750","Potra2n12c24760","Potra2n13c25576","Potra2n14c26711","Potra2n14c26818","Potra2n14c26918","Potra2n14c27178","Potra2n15c28915","Potra2n15c28466","Potra2n15c28118","Potra2n16c29403","Potra2n6c14928","Potra2n16c30501","Potra2n17c31797","Potra2n17c31126","Potra2n17c30794","Potra2n19c33603")
-ShiVes <- c("Potra2n2c5125","Potra2n6c13849","Potra2n14c26495","Potra2n12c24354","Potra2n17c31793","Potra2n3c6715","Potra2n4c9874","Potra2n4c10104","Potra2n6c13368","Potra2n7c16311","Potra2n9c19893","Potra2n9c18811","Potra2n13c26225","Potra2n14c26600","Potra2n1c2330","Potra2n1c3263","Potra2n11c22702","Potra2n2c5282","Potra2n2c5031","Potra2n2c4928","Potra2n3c7393","Potra2n3c7342","Potra2n5c11905","Potra2n6c15090","Potra2n6c14723","Potra2n6c12972","Potra2n8c17258","Potra2n10c21280","Potra2n10c21180","Potra2n11c23465","Potra2n443s35699","Potra2n12c24560","Potra2n14c26506","Potra2n14c26919","Potra2n14c27047","Potra2n14c27085","Potra2n16c29522","Potra2n16c29709","Potra2n18c32911","Potra2n18c32086")
-Shietc <- c("Potra2n8c16843","Potra2n1542s37129","Potra2n246s35111","Potra2n10c20411","Potra2n19c33285","Potra2n2c5125","Potra2n2c4880","Potra2n6c13849","Potra2n11c22498","Potra2n14c26495","Potra2n17c31793","Potra2n2c4256","Potra2n17c30701","Potra2n3c6715","Potra2n11c23285","Potra2n14c26600","Potra2n7c16311","Potra2n2c4256",
-            "Potra2n10c21180","Potra2n11c22702","Potra2n11c23465","Potra2n12c24560","Potra2n14c26919","Potra2n14c27047","Potra2n14c27085","Potra2n14c27828","Potra2n16c29522","Potra2n16c29709","Potra2n18c32086","Potra2n18c32911","Potra2n18c33178","Potra2n1c2330","Potra2n1c3597","Potra2n1c923","Potra2n2c5031","Potra2n3c7040","Potra2n3c7342","Potra2n4c10104","Potra2n6c15090","Potra2n7c16348","Potra2n8c17258","Potra2n9c18811")
-
-#' 5.8. Markers in SuppData (Li et al., 2021)
+#' #' cellulase synthase genes: cesA4, A7-A, A7-B, A8-A, A8-B
+#' ces <- c("Potra2n2c4078","Potra2n6c13749", "Potra2n18c32336", "Potra2n11c23199",
+#'          "Potra2n4c8952")
 #' 
-#' SuppData6 (Li et al., 2021) cluster 0 to 11: 
-#' Of these, Cluster 0,2,3,4,5,6,8,9,10,11 genes were selected, others do not exist
-li1ST6 <- c("Potra2n1c596","Potra2n19c33855", "Potra2n1c1565", "Potra2n1c885","Potra2n13c26019", "Potra2n1c1049","Potra2n13c26037","Potra2n14c27483","Potra2n18c33199","Potra2n9c19467","Potra2n16c29966")
-
-#' Genes in SuppData7 (Li et al., 2021):
-li2ST7 <- c("Potra2n10c20736","Potra2n10c21184","Potra2n10c22101","Potra2n10c22334","Potra2n11c22555","Potra2n11c22739","Potra2n12c24388","Potra2n14c26962","Potra2n16c30018","Potra2n16c30222","Potra2n16c30520","Potra2n17c30922","Potra2n17c30987","Potra2n17c31220","Potra2n1c3290","Potra2n1c3599", "Potra2n1c777","Potra2n1c892","Potra2n2c4139","Potra2n2c4470","Potra2n2c4509","Potra2n2c5397","Potra2n2c5623","Potra2n2c5742","Potra2n2c5999","Potra2n2c6010","Potra2n3c6548","Potra2n3c6709","Potra2n3c6863","Potra2n3c7085","Potra2n3c8387","Potra2n5c10517","Potra2n5c11113","Potra2n5c11775","Potra2n5c12062","Potra2n6c15294","Potra2n7c16270","Potra2n7c16346","Potra2n8c17128","Potra2n8c18019","Potra2n9c18964","Potra2n9c19384","Potra2n9c19859","Potra2n5c10911","Potra2n14c27106")
-
-liSelMarkST7<- c("Potra2n2c4994","Potra2n14c27682","Potra2n8c18380","Potra2n7c15772","Potra2n4c9797","Potra2n2c6426","Potra2n5c11306","Potra2n16c30290","Potra2n14c27721","Potra2n1c1438","Potra2n11c23043","Potra2n5c11668","Potra2n5c10940","Potra2n5c10926","Potra2n1c3835","Potra2n6c14358","Potra2n6c14530","Potra2n16c29448","Potra2n9c19538","Potra2n4c9403","Potra2n3c7365","Potra2n9c19373","Potra2n2c5831","Potra2n5c12253","Potra2n16c29767","Potra2n4c10402","Potra2n7c15743","Potra2n9c19117","Potra2n820s36802","Potra2n4c9402")
-#'
-#' 5.9. Genes for clusters and cell types (Chen et al., 2021)
-#' Here, number shows the cluster number in paper and text shows the cluster name
-mark <- c("Potra2n6c14918","Potra2n4c9802","Potra2n15c29012","Potra2n1c986","Potra2n5c12689",
-          "Potra2n2c5262","Potra2n18c32485","Potra2n1c2071","Potra2n3c7164","Potra2n5c11923",
-          "Potra2n4c8852","Potra2n19c34474","Potra2n1c1024","Potra2n7c16246","Potra2n14c27521",
-          "Potra2n369s35437","Potra2n12c24741","Potra2n5c10890","Potra2n1c3322","Potra2n17c31073",
-          "Potra2n12c24778","Potra2n1c769","Potra2n1c957","Potra2n369s35445","Potra2n6c13032","Potra2n3c7257","Potra2n4c8671")
-
-#' 5.10. For fibers
-#' Late fiber gene list sent by Hannele
-lateFibHanle <- c ("Potra2n6c14170","Potra2n1c1849","Potra2n6c15100","Potra2n6c15101","Potra2n19c33746","Potra2n5c12551","Potra2n1c94","Potra2n4c9157","Potra2n12c24599","Potra2n4c9039","Potra2n8c17428","Potra2n19c34385","Potra2n15c28085","Potra2n6c14603","Potra2n15c28689","Potra2n12c24486","Potra2n633s36227","Potra2n12c24762","Potra2n16c29514","Potra2n19c33745","Potra2n125s34627","Potra2n13c25019","Potra2n13c25443","Potra2n15c28411","Potra2n16c30073","Potra2n19c33329","Potra2n19c33344","Potra2n19c33747","Potra2n3c6760","Potra2n4c9502")
-lowexp <- c("Potra2n6c14170","Potra2n1c1849","Potra2n6c15100","Potra2n6c15101","Potra2n19c33746","Potra2n12c24599","Potra2n4c9039","Potra2n6c14603","Potra2n12c24762","Potra2n19c33745","Potra2n15c28411","Potra2n19c33344")
-
-#5.11. Tung et al., 2022
-lignin <- c("Potra2n3c6783","Potra2n6c14201","Ptra2n8c16946","Potra2n14c26628","Potra2n16c30091","Potra2n5c10696","Potra2n8c16891","Potra2n13c25045","Potra2n17c30922")
-figs13 <- c("Potra2n19c33452","Potra2n1c856","Potra2n1c1639","Potra2n1c1897","Potra2n2c5835","Potra2n2c4490","Potra2n3c8296","Potra2n4c9930","Potra2n4c10139","Potra2n8c17951","Potra2n11c22655","Potra2n15c28183","Potra2n15c28184")
-figs19 <- c("Potra2n17c31807","Potra2n8c16805","Potra2n5c12126","Potra2n5c11373","Potra2n14c26481", "Potra2n7c16454")
-s14fib <- c("Potra2n10c20156","Potra2n10c22093","Potra2n12c23702","Potra2n12c23837","Potra2n12c24890","Potra2n13c25019","Potra2n13c25704","Potra2n13c26198","Potra2n14c27637","Potra2n15c28014","Potra2n15c29105","Potra2n15c29113","Potra2n15clength29164","Potra2n16c29484","Potra2n16c30218","Potra2n16c30267","Potra2n17c31215","Potra2n17c31695","Potra2n18c32051","Potra2n18c32369","Potra2n19c33344","Potra2n1c1134","Potra2n1c1591","Potra2n1c1997","Potra2n1c2382","Potra2n1c3857","Potra2n2c4696","Potra2n2c6000","Potra2n2c6306","Potra2n3c6819","Potra2n3c7291","Potra2n4c8742","Potra2n4c9502","Potra2n4c9523","Potra2n4c9719","Potra2n5c11070","Potra2n5c11913","Potra2n5c12161","Potra2n6c14379","Potra2n6c14530","Potra2n6c14780","Potra2n6c14781","Potra2n7c16243","Potra2n8c17402","Potra2n8c17650","Potra2n8c18023","Potra2n8c18128","Potra2n8c18294","Potra2n9c18710","Potra2n9c19633","Potra2n9c19741","Potra2n9c20007","Potra2n6c15285","Potra2n6c13790")
-s14ves <- c("Potra001029g08632","Potra2n10c20716","Potra2n10c20846","Potra2n10c21715","Potra2n11c22924","Potra2n12c23924","Potra2n12c24430","Potra2n12c24758","Potra2n13c25053","Potra2n13c25938","Potra2n13c26020","Potra2n14c26398","Potra2n14c26658","Potra2n14c27455","Potra2n14c27675","Potra2n15c28703","Potra2n16c29368","Potra2n16c29956","Potra2n18c32909","Potra2n1c2383","Potra2n1c3919","Potra2n1c483","Potra2n1c631","Potra2n203s34942","Potra2n2c4081","Potra2n2c5047","Potra2n2c5927","Potra2n2c6217","Potra2n2c6318","Potra2n3c7065","Potra2n3c7465","Potra2n4c8586","Potra2n4c8788","Potra2n4c9127","Potra2n4c9402","Potra2n514s35859","Potra2n5c10700","Potra2n5c11603","Potra2n5c11639","Potra2n5c12176","Potra2n5c12351","Potra2n5c12441","Potra2n6c14479","Potra2n6c14597","Potra2n7c15960","Potra2n8c17079","Potra2n8c17589","Potra2n8c17613","Potra2n8c18257","Potra2n9c19793","Potra2n9c19878")
-s14ray <- c("Potra001886g15019","Potra2n10c20181","Potra2n10c20234","Potra2n10c20683","Potra2n10c20932","Potra2n10c21140","Potra2n10c21228","Potra2n10c21351","Potra2n10c21638","Potra2n10c21713","Potra2n10c21725","Potra2n10c21912","Potra2n10c22232","Potra2n11c22873","Potra2n11c23444","Potra2n12c23733","Potra2n12c23990","Potra2n12c24140","Potra2n13c24999","Potra2n13c25225","Potra2n13c25636","Potra2n13c25697","Potra2n13c25934","Potra2n13c26148","Potra2n14c26461","Potra2n14c26462","Potra2n14c26464","Potra2n14c26497","Potra2n14c26529","Potra2n14c27128","Potra2n14c27196","Potra2n14c27357","Potra2n14c27545","Potra2n14c27691","Potra2n14c27805","Potra2n14c27850","Potra2n154s34741","Potra2n15c28231","Potra2n15c29127","Potra2n16c29491","Potra2n16c29513","Potra2n16c30395","Potra2n17c30597","Potra2n19c33348","Potra2n19c33407","Potra2n19c33924","Potra2n19c34230","Potra2n1c1749","Potra2n1c2034","Potra2n1c2037","Potra2n1c2350","Potra2n1c3008","Potra2n1c3440","Potra2n1c3617","Potra2n1c3711","Potra2n1c3908","Potra2n1c531","Potra2n1c677","Potra2n1c693","Potra2n1c714","Potra2n258s35141","Potra2n2c4261","Potra2n2c4724")
-s14ray1 <- c("Potra2n2c5150","Potra2n2c5325","Potra2n2c5691","Potra2n2c5770","Potra2n2c5997","Potra2n2c6123","Potra2n2c6195","Potra2n3c6552","Potra2n3c6865","Potra2n3c7178","Potra2n3c7315","Potra2n3c7363","Potra2n3c7903","Potra2n4c8432","Potra2n4c9135","Potra2n4c9752","Potra2n4c9884","Potra2n5c10715","Potra2n5c10780","Potra2n5c11137","Potra2n5c11557","Potra2n5c12296","Potra2n5c12429","Potra2n5c12447","Potra2n5c12522","Potra2n5c12541","Potra2n5c12687","Potra2n5c12804","Potra2n620s36177","Potra2n6c12828","Potra2n6c13140","Potra2n6c13191","Potra2n6c13220","Potra2n6c13318","Potra2n6c13467","Potra2n6c13491","Potra2n6c13586","Potra2n6c13868","Potra2n6c13967","Potra2n6c14775","Potra2n6c14862","Potra2n6c15097","Potra2n6c15141","Potra2n6c15233","Potra2n6c15336","Potra2n747s36678","Potra2n7c15481","Potra2n7c15868","Potra2n7c15955","Potra2n7c16004","Potra2n7c16369","Potra2n7c16410","Potra2n7c16446","Potra2n8c16988","Potra2n8c17145","Potra2n8c17251","Potra2n8c17293","Potra2n8c17331","Potra2n9c18794","Potra2n9c18942","Potra2n9c18949","Potra2n9c19022","Potra2n9c19045","Potra2n9c19321","Potra2n9c19718","Potra2n9c19805")
-s18 <- c("Potra2n1c1345","Potra2n2c5467","Potra2n2c4942","Potra2n2c4144","Potra2n2c4078","Potra2n4c8430","Potra2n568s35990","Potra2n5c12126","Potra2n5c11373","Potra2n5c10753","Potra2n6c14930","Potra2n155s34744","Potra2n16c30073","Potra2n6c13614","Potra2n7c16454","Potra2n8c16805","Potra2n8c16999","Potra2n8c18231","Potra2n10c21170","Potra2n14c26481","Potra2n15c28766","Potra2n15c28689","Potra2n17c31807","Potra2n18c32244","Potra2n19c33790")
-
-# Selected markers (Tung et al., 2022)
-LateFib_Ves <- c("Potra2n5c10753","Potra2n8c16805","Potra2n17c31807","Potra2n19c33790")
-InterFib <- c("Potra2n5c12126","Potra2n6c14930","Potra2n14c26481")
-RayOrgan <- c("Potra2n5c11373","Potra2n8c16999")
-EarlyFib <- c("Potra2n568s35990","Potra2n7c16454")
-RayPrecu <- c("Potra2n8c18231","Potra2n18c32244")
-FibOrgan <- c("Potra2n1c1345","Potra2n4c8430","Potra2n6c13614","Potra2n15c28766")
-Fib <- c("Potra2n2c4078","Potra2n16c30073","Potra2n10c21170","Potra2n15c28689")
-RayParen <- c("Potra2n2c5467","Potra2n2c4942","Potra2n2c4144","Potra2n155s34744")
-
-#5.12. Lignin genes from Miko' data
-ligMiko <- c("Potra2n19c33285","Potra2n1c351","Potra2n10c20411","Potra2n9c19275","Potra2n9c19246","Potra2n8c17885","Potra2n8c16946","Potra2n7c16495","Potra2n6c15127","Potra2n6c14201","Potra2n5c11765","Potra2n3c7945","Potra2n3c6847","Potra2n3c6817","Potra2n3c6783","Potra2n1c307","Potra2n1c2649","Potra2n1c1541","Potra2n16c30091","Potra2n16c29966","Potra2n13c24959","Potra2n12c23766")
-
-#5.13. O-Carillo et al cell death genes
-death <- c("Potra2n4c10301","Potra2n16c29448","Potra2n10c21346","Potra2n1c3148","Potra2n4c8470")
-
-#5.14. ERF 81-88
-erf <- c("Potra2n15c29002","Potra2n1c788","Potra2n2c4898","Potra2n3c7265","Potra2n13c24952","Potra2n14c27085","Potra2n19c33278","Potra2n12c23983")
-
-#5.15.
-GT43Mello<- c("Potra2n2c5445","Potra2n5c11571","Potra2n6c14160","Potra2n6c13189","Potra2n7c16228","Potra2n16c30051","Potra2n18c32894")
-
-# 5.16
-# GUS lines
-gus <- c("Potra2n3c7095","Potra2n4c9818","Potra2n5c11792","Potra2n9c19178","Potra2n18c32992","Potra2n19c33746","Potra2n10c20181","Potra2n13c26298","Potra2n13c25538","Potra2n15c28411","Potra2n2c5389","Potra2n4c9202","Potra2n9c18829","Potra2n10c22224","Potra2n17c31277","Potra2n10c20842","Potra2n16c30091","Potra2n8c17315","Potra2n2c5294")
-# issa Validation
-issa <- c("Potra2n4c8952","Potra2n5c10536","Potra2n2c6410","Potra2n14c27598", "Potra2n4c9696", "Potra2n2c5606", "Potra2n7c16495", "Potra2n5c11765", "Potra2n7c16234", "Potra2n5c11573", "Potra2n3c7305", "Potra2n2c6235")
-
-# 5.17 Larisch et al., 2012
-larish <- c("Potra2n13c26124","Potra2n15c28479","Potra2n13c26252","Potra2n3c7481","Potra2n10c21640","Potra2n5c11320","Potra2n10c20915","Potra2n8c17983","Potra2n2c5606","Potra2n4c9696","Potra2n9c19920","Potra2n18c32485","Potra2n8c18284","Potra2n10c22245","Potra2n17c31716","Potra2n19c33927","Potra2n16c29957","Potra2n2c4577","Potra2n10c21132","Potra2n1c1290","Potra2n17c30652","Potra2n18c32561","Potra2n4c9927","Potra2n15c28361","Potra2n10c20361","Potra2n5c12183","Potra2n8c18507","Potra2n18c32183","Potra2n13c26115","Potra2n8c18472","Potra2n8c17720","Potra2n15c28125","Potra2n7c15917","Potra2n5c12157","Potra2n8c17568","Potra2n7c15596","Potra2n10c21949","Potra2n14c27777","Potra2n14c27633")
-
-# 5.18 snRNA Seq vegetative shoot apex from Conde et al., 2022
-condeClst <- c("Potra2n10c20548","Potra2n10c20676","Potra2n10c20892",
-               "Potra2n10c21070","Potra2n10c21478","Potra2n10c21634",
-               "Potra2n10c22054","Potra2n12c24397","Potra2n12c24714",
-               "Potra2n14c26506","Potra2n14c27625","Potra2n15c27961",
-               "Potra2n15c29012","Potra2n16c29503","Potra2n16c29820",
-               "Potra2n17c30845","Potra2n18c32645","Potra2n18c32648","Potra2n18c32756","Potra2n18c33124","Potra2n1c1621","Potra2n1c2062","Potra2n1c2670","Potra2n1c534","Potra2n1c923","Potra2n2c4945","Potra2n2c5108","Potra2n2c5386","Potra2n2c5448","Potra2n2c5872","Potra2n2c5894","Potra2n2c6106","Potra2n3c7548","Potra2n3c7649","Potra2n3c8006","Potra2n4c10284","Potra2n4c10286","Potra2n4c10286","Potra2n4c8449","Potra2n4c9001","Potra2n5c12554","Potra2n6c13216","Potra2n6c13402","Potra2n7c16584","Potra2n8c17128")
+#' #' Phloem: shouldn't exist in present dataset
+#' phloem <- c("Potra2n17c30730","Potra2n12c24024","Potra2n15c28954","Potra2n4c9149",
+#'             "Potra2n8c17353","Potra2n10c20892","Potra2n17c30726","Potra2n4c9146",
+#'             "Potra2n10c20934","Potra2n8c17387","Potra2n1c1172","Potra2n17c30744",
+#'             "Potra2n4c9160","Potra2n8c18492")
+#' bsp <- c("Potra2n13c25437", "Potra2n13c25438", "Potra2n13c25439", "Potra2n13c25440",
+#'          "Potra2n13c25589", "Potra2n158s34776", "Potra2n484s35780")
+#' 
+#' #' Cambium/phloem: PtOPS-A, PtOPS-B, PtBRX-A, PtBRX-B, CLE41, MYB83/PtMYB20/21
+#' camb_or_phloem <- c("Potra2n6c14490","Potra2n16c30270","Potra2n1c1136",
+#'                     "Potra2n3c7606","Potra2n2c4235","Potra2n9c19455")
+#' 
+#' #' Cambium/expanding xylem:
+#' #' PtCDC2, PtAINT, PtAINT, PtAINT, PtAINT, LOG4/PtLOG6, PtPM2, PtPL1-27
+#' cambium <- c("Potra2n16c30563","Potra2n2c5371","Potra2n6c14967","Potra2n227s35019",
+#'              "Potra2n1c1493","Potra2n16c30088", "Potra2n5c10720","Potra2n3c6899")
+#' 
+#' #' SNARE-like, MYB83/PtMYB20/21, MYB46/PtMYB21, PtTMO5-A, PtTMO5-B, PtEXPA1
+#' cambium_expandingxylem <- c ("Potra2n1c1686","Potra2n1c2305", "Potra2n9c19651",
+#'                              "Potra2n10c21280","Potra2n8c17692", "Potra2n1c2087")
+#' 
+#' #' Expanding xylem: PtTMO5-A, PtTMO5-B, snd, vnd, vnd, snd, AtLAC11, LAC, LAC12
+#' expx <- c ("Potra2n10c21280","Potra2n17c31797", "Potra2n12c24750","Potra2n3c7486",
+#'            "Potra2n7c15489","Potra2n1c2159","Potra2n317s35299","Potra2n11c22797")
+#' 
+#' #' Lignified xylem or everywhere except expanding xylem
+#' #' PtPM1, PtBFN1, PtBAM3-A, PtBAM3-B, PtBAM3-C, PtLHW-A, PtLHW-B
+#' lignified_xylem <- c ("Potra2n2c6214","Potra2n10c21346", "Potra2n1c593", 
+#'                       "Potra2n3c7083","Potra2n4c10378","Potra2n280s35193","Potra2n1c1878")
+#' 
+#' #' Xyloglucan and pectin biosynthesis genes
+#' xylo <- c("Potra2n267s35161","Potra2n10c22184","Potra2n10c22183",
+#'           "Potra2n12c24288","Potra2n15c28674")
+#' 
+#' pectin <- c("Potra2n14c26890","Potra2n2c5051","Potra2n4c10217","Potra2n16c29244",
+#'             "Potra2n6c15382","Potra2n16c30575","Potra2n252s35126","Potra2n5c10503",
+#'             "Potra2n3c7089","Potra2n1c601","Potra2n2c4911","Potra2n14c27069",
+#'             "Potra2n12c24734","Potra2n114s34573")
+#' 
+#' #' 5.3. Laccases family (as per aspwood) specific to cluster or cell type could exist:
+#' lac_fam <- c("Potra2n10c20714","Potra2n10c20806","Potra2n11c22797","Potra2n11c23187",
+#'              "Potra2n12c24132","Potra2n13c25011","Potra2n14c27140","Potra2n8c17196",
+#'              "Potra2n15c28842","Potra2n16c30017","Potra2n16c30239","Potra2n16c30241",
+#'              "Potra2n16c30273","Potra2n16c30274","Potra2n6c13254",
+#'              "Potra2n19c33334","Potra2n19c33575","Potra2n1c1775","Potra2n1c2108",
+#'              "Potra2n1c2159","Potra2n1c2996","Potra2n1c3502","Potra2n1c447",
+#'              "Potra2n317s35299","Potra2n4c9830","Potra2n5c11061","Potra2n5c11062",
+#'              "Potra2n5c11063","Potra2n6c14486","Potra2n6c14515","Potra2n6c14571",
+#'              "Potra2n6c14577","Potra2n7c16431","Potra2n8c17197","Potra2n8c17280",
+#'              "Potra2n9c18755","Potra2n9c19221","Potra2n9c19763","Potra2n9c19826")
+#' #' 
+#' #' 5.4. For rays
+#' #' PIRIN2 could be a marker of lignified xylem or rays
+#' prn2 <- c("Potra2n2c4342","Potra2n14c27610", "Potra2n9c19440")
+#' 
+#' #' 5.5. For vessels 
+#' #' right homolog:  "Potra2n6c13361",
+#' acl5 <- c("Potra2n10c21673", "Potra2n6c13361", "Potra2n8c18019")
+#' wat1 <- c("Potra2n5c10753","Potra2n2c6181")
+#' #' XCP: xylem cysteine protease inhibitor: xcp2, xcp2, xcp1, xbcp3
+#' #' XCPs were used as markers in Li et al., 2021; Chen et al, 2021 as well
+#' xcp <-c("Potra2n5c10536","Potra2n2c6410", "Potra2n4c10232","Potra2n5c10760")
+#' 
+#' #' vnd
+#' vnd <- c("Potra2n114s34556","Potra2n12c24750","Potra2n13c25337","Potra2n19c33624",
+#'          "Potra2n1c1031","Potra2n3c7486","Potra2n5c11773","Potra2n7c16511")
+#' 
+#' rnaseiii <- c("Potra2n8c17393")
+#' 
+#' #' Kubo et al, 2005- highly exp vessel genes
+#' # 
+#' #' Metacaspase5
+#' mc5 <- c("Potra2n8c17345","Potra2n10c20883")
+#' #' 
+#' #' 5.6. Core cell cycle TAIR
+#' coreCyc <- c("Potra2n2c4390","Potra2n1c2176","Potra2n1c2151","Potra2n13c25822",
+#'              "Potra2n1c1559","Potra2n8c17361","Potra2n12c24142","Potra2n12c24163",
+#'              "Potra2n5c10575","Potra2n2c6426","Potra2n735s36629","Potra2n5c11241",
+#'              "Potra2n2c5307","Potra2n2c6231","Potra2n9c19212","Potra2n8c17316",
+#'              "Potra2n10c21618","Potra2n8c17791","Potra2n5c11923","Potra2n5c11433",
+#'              "Potra2n5c11441","Potra2n7c16280","Potra2n6c13237","Potra2n1c2376",
+#'              "Potra2n9c20077","Potra2n5c10858","Potra2n1c2727","Potra2n6c13528",
+#'              "Potra2n3c7661","Potra2n16c30563","Potra2n6c14644","Potra2n12c24354",
+#'              "Potra2n6c15109","Potra2n1c257","Potra2n2c4226","Potra2n4c9630",
+#'              "Potra2n5c11567","Potra2n13c25044","Potra2n3c7422","Potra2n9c19647",
+#'              "Potra2n18c32557","Potra2n14c27002","Potra2n1c2633","Potra2n7c16154",
+#'              "Potra2n6c14563","Potra2n16c30120","Potra2n12c23916","Potra2n6c13129",
+#'              "Potra2n8c17128","Potra2n13c25612","Potra2n669s36351","Potra2n4c10173",
+#'              "Potra2n18c32954","Potra2n5c12590","Potra2n2c4525","Potra2n1c724","Potra2n7c15742")
+#' # Cell cycle genes (Zhang et al., 2021)
+#' g01phase <- c("Potra2n10c22352","Potra2n11c22967","Potra2n13c25403","Potra2n14c27234",
+#'               "Potra2n14c27322","Potra2n18c32466","Potra2n1c2151","Potra2n1c2633",
+#'               "Potra2n1c2837","Potra2n2c4043","Potra2n5c11567","Potra2n6c14588","
+#'               Potra2n9c19242")
+#' g2phase <- c("Potra2n10c21070","Potra2n10c21695","Potra2n10c21833","Potra2n10c22093","Potra2n10c22145","Potra2n10c22346","Potra2n11c22815","Potra2n11c23463","Potra2n12c24927","Potra2n13c25321","Potra2n13c25579","Potra2n13c26121","Potra2n13c26208","Potra2n14c26403","Potra2n14c27462","Potra2n14c27475","Potra2n15c27972","Potra2n15c28096","Potra2n15c28656","Potra2n15c28758","Potra2n15c28945","Potra2n16c29301","Potra2n16c29689","Potra2n16c29960","Potra2n16c30306","Potra2n16c30563","Potra2n18c32638","Potra2n18c32677","Potra2n18c32912","Potra2n19c34004","Potra2n19c34102","Potra2n1c1559","Potra2n1c2018","Potra2n1c2288","Potra2n1c2573","Potra2n1c2758","Potra2n1c2942","Potra2n1c3087",
+#'              "Potra2n1c3141","Potra2n1c3180","Potra2n1c3295","Potra2n1c3611","Potra2n1c410","Potra2n2c4140","Potra2n2c4292","Potra2n2c4299",
+#'              "Potra2n2c4587","Potra2n2c4715","Potra2n2c4966","Potra2n2c5259","Potra2n2c5415","Potra2n2c5455","Potra2n2c5494","Potra2n2c5545",
+#'              "Potra2n2c5663","Potra2n2c6426","Potra2n372s35460","Potra2n3c7249","Potra2n3c7951","Potra2n3c7972","Potra2n3c8097","Potra2n3c8273","Potra2n4c8773","Potra2n4c9741","Potra2n5c10510","Potra2n5c10575","Potra2n5c10579","Potra2n5c11241","Potra2n5c11640","Potra2n5c12275","Potra2n680s36426","Potra2n6c14644","Potra2n6c14653","Potra2n6c14979","Potra2n6c15055","Potra2n6c15109","Potra2n7c15462","Potra2n7c16145","Potra2n8c17814","Potra2n8c17973","Potra2n8c18569","Potra2n8c18623","Potra2n9c18760","Potra2n9c19217","Potra2n9c19378","Potra2n9c20077")
+#' sphase <- c("Potra2n10c20260","Potra2n10c20508","Potra2n11c22684","Potra2n13c26037","Potra2n13c26116","Potra2n14c27103","Potra2n14c27106","Potra2n15c28275","Potra2n15c28844","Potra2n16c29833","Potra2n17c31198","Potra2n18c33119","Potra2n1c101","Potra2n1c2877","Potra2n1c3343","Potra2n1c3610","Potra2n2c4073","Potra2n2c4499","Potra2n2c5307","Potra2n2c6056","Potra2n3c7036","Potra2n3c7597","Potra2n4c9636","Potra2n5c10911","Potra2n5c12603","Potra2n6c13036","Potra2n6c14627","Potra2n7c15963","Potra2n7c16633","Potra2n8c16885","Potra2n8c17847","Potra2n9c19886")
+#' mphase <- c ("Potra2n10c20592","Potra2n10c20846","Potra2n10c21494","Potra2n10c21734","Potra2n10c22098","Potra2n11c22486","Potra2n11c22945","Potra2n11c23018","Potra2n12c24163","Potra2n13c25058","Potra2n13c25262","Potra2n13c25822","Potra2n13c25852","Potra2n14c27365","Potra2n14c27462","Potra2n14c27797","Potra2n15c29215","Potra2n16c29450","Potra2n16c30378","Potra2n16c30406","Potra2n16c30474","Potra2n17c30910","Potra2n17c31100","Potra2n17c31123","Potra2n18c32687","Potra2n19c34338","Potra2n1c2214","Potra2n1c2376","Potra2n1c2511","Potra2n1c2591","Potra2n1c3910","Potra2n1c4000","Potra2n1c671","Potra2n1c923","Potra2n2c4070","Potra2n2c4172","Potra2n3c7249","Potra2n3c7843","Potra2n4c8944","Potra2n4c8987","Potra2n5c10575","Potra2n5c10858","Potra2n5c10979","Potra2n5c11566","Potra2n5c11796","Potra2n5c11923","Potra2n5c12554","Potra2n6c12962","Potra2n6c13237","Potra2n6c13440","Potra2n6c13456","Potra2n6c14169","Potra2n6c15109","Potra2n7c15465","Potra2n7c16119","Potra2n8c17128","Potra2n8c17171","Potra2n8c17318","Potra2n8c18190","Potra2n8c18202","Potra2n8c18287","Potra2n9c19378","Potra2n9c19459","Potra2n9c19549","Potra2n6c13657", "Potra2n16c29642","Potra2n17c30791", "Potra2n6c14415")
+#' # s.genes <- c("Potra2n10c20508", "Potra2n1c2877")
+#' # g2m.genes <- c("Potra2n8c18287", "Potra2n6c12962","Potra2n5c11241","Potra2n2c6426")
+#' # g1.genes <- c("Potra2n14c27322", "Potra2n1c2151")
+#' 
+#' #' 5.7. Genes in suppl table of Shi et al., 2017, laser microdissection paper
+#' Shifib <- c("Potra2n1c546","Potra2n8c16946","Potra2n10c20318","Potra2n13c24959","Potra2n1c3619","Potra2n2c4078","Potra2n5c12319","Potra2n6c14201","Potra2n7c16495","Potra2n7c15752","Potra2n8c17885","Potra2n11c23199","Potra2n11c22673","Potra2n16c30051","Potra2n16c30091","Potra2n1c452","Potra2n1c829","Potra2n1c1020","Potra2n1c2246","Potra2n1c3530","Potra2n2c4212","Potra2n3c7978","Potra2n3c7705","Potra2n3c7477","Potra2n4c8837","Potra2n4c9512","Potra2n5c11659","Potra2n5c11186","Potra2n7c15765","Potra2n7c15466","Potra2n8c16778","Potra2n9c20072","Potra2n10c21057","Potra2n13c24976","Potra2n15c28920","Potra2n16c29749","Potra2n18c32675","Potra2n1c1059","Potra2n1c2112","Potra2n1c2242","Potra2n584s36051","Potra2n5c12633","Potra2n14c27757","Potra2n17c31154","Potra2n18c32560","Potra2n758s36699")
+#' ShiCelWal <- c("Potra2n1c307","Potra2n3c6817","Potra2n1c1541","Potra2n2c5206","Potra2n3c7945","Potra2n3c6847","Potra2n3c6783","Potra2n4c8952","Potra2n5c11571","Potra2n6c15127","Potra2n6c14160","Potra2n6c13749","Potra2n5c11670","Potra2n9c20060","Potra2n9c19275","Potra2n9c19246","Potra2n12c23766","Potra2n12c24640","Potra2n14c26547","Potra2n14c26628")
+#' ShiXyl <- c("Potra2n1c953","Potra2n1c1657","Potra2n1c2250","Potra2n1c2305","Potra2n1c3191","Potra2n1c3797","Potra2n1c4016","Potra2n2c6375","Potra2n2c6070","Potra2n2c5746","Potra2n2c5385","Potra2n2c5151","Potra2n2c5075","Potra2n14c27102","Potra2n2c4785","Potra001157g10045","Potra2n2c4080","Potra2n3c8027","Potra2n3c7305","Potra2n3c6563","Potra2n4c9127","Potra2n4c9297","Potra2n4c9868","Potra2n5c12307","Potra2n5c11773","Potra2n5c10901","Potra2n5c10869","Potra2n5c10648","Potra2n6c13965","Potra2n7c16575","Potra2n7c16511","Potra2n203s34957","Potra2n7c15498","Potra2n7c15489","Potra2n8c18444","Potra2n369s35436","Potra2n9c19727","Potra2n9c19651","Potra2n10c22314","Potra2n10c21389","Potra2n11c23287","Potra2n4c8839","Potra2n11c22968","Potra2n12c23697","Potra2n12c24046","Potra2n12c24750","Potra2n12c24760","Potra2n13c25576","Potra2n14c26711","Potra2n14c26818","Potra2n14c26918","Potra2n14c27178","Potra2n15c28915","Potra2n15c28466","Potra2n15c28118","Potra2n16c29403","Potra2n6c14928","Potra2n16c30501","Potra2n17c31797","Potra2n17c31126","Potra2n17c30794","Potra2n19c33603")
+#' ShiVes <- c("Potra2n2c5125","Potra2n6c13849","Potra2n14c26495","Potra2n12c24354","Potra2n17c31793","Potra2n3c6715","Potra2n4c9874","Potra2n4c10104","Potra2n6c13368","Potra2n7c16311","Potra2n9c19893","Potra2n9c18811","Potra2n13c26225","Potra2n14c26600","Potra2n1c2330","Potra2n1c3263","Potra2n11c22702","Potra2n2c5282","Potra2n2c5031","Potra2n2c4928","Potra2n3c7393","Potra2n3c7342","Potra2n5c11905","Potra2n6c15090","Potra2n6c14723","Potra2n6c12972","Potra2n8c17258","Potra2n10c21280","Potra2n10c21180","Potra2n11c23465","Potra2n443s35699","Potra2n12c24560","Potra2n14c26506","Potra2n14c26919","Potra2n14c27047","Potra2n14c27085","Potra2n16c29522","Potra2n16c29709","Potra2n18c32911","Potra2n18c32086")
+#' Shietc <- c("Potra2n8c16843","Potra2n1542s37129","Potra2n246s35111","Potra2n10c20411","Potra2n19c33285","Potra2n2c5125","Potra2n2c4880","Potra2n6c13849","Potra2n11c22498","Potra2n14c26495","Potra2n17c31793","Potra2n2c4256","Potra2n17c30701","Potra2n3c6715","Potra2n11c23285","Potra2n14c26600","Potra2n7c16311","Potra2n2c4256",
+#'             "Potra2n10c21180","Potra2n11c22702","Potra2n11c23465","Potra2n12c24560","Potra2n14c26919","Potra2n14c27047","Potra2n14c27085","Potra2n14c27828","Potra2n16c29522","Potra2n16c29709","Potra2n18c32086","Potra2n18c32911","Potra2n18c33178","Potra2n1c2330","Potra2n1c3597","Potra2n1c923","Potra2n2c5031","Potra2n3c7040","Potra2n3c7342","Potra2n4c10104","Potra2n6c15090","Potra2n7c16348","Potra2n8c17258","Potra2n9c18811")
+#' 
+#' #' 5.8. Markers in SuppData (Li et al., 2021)
+#' #' SuppData6 (Li et al., 2021) cluster 0 to 11: 
+#' #' Of these, Cluster 0,2,3,4,5,6,8,9,10,11 genes were selected, others do not exist
+#' li1ST6 <- c("Potra2n1c596","Potra2n19c33855", "Potra2n1c1565", "Potra2n1c885","Potra2n13c26019", "Potra2n1c1049","Potra2n13c26037","Potra2n14c27483","Potra2n18c33199","Potra2n9c19467","Potra2n16c29966")
+#' 
+#' #' Genes in SuppData7 (Li et al., 2021):
+#' li2ST7 <- c("Potra2n10c20736","Potra2n10c21184","Potra2n10c22101","Potra2n10c22334","Potra2n11c22555","Potra2n11c22739","Potra2n12c24388","Potra2n14c26962","Potra2n16c30018","Potra2n16c30222","Potra2n16c30520","Potra2n17c30922","Potra2n17c30987","Potra2n17c31220","Potra2n1c3290","Potra2n1c3599", "Potra2n1c777","Potra2n1c892","Potra2n2c4139","Potra2n2c4470","Potra2n2c4509","Potra2n2c5397","Potra2n2c5623","Potra2n2c5742","Potra2n2c5999","Potra2n2c6010","Potra2n3c6548","Potra2n3c6709","Potra2n3c6863","Potra2n3c7085","Potra2n3c8387","Potra2n5c10517","Potra2n5c11113","Potra2n5c11775","Potra2n5c12062","Potra2n6c15294","Potra2n7c16270","Potra2n7c16346","Potra2n8c17128","Potra2n8c18019","Potra2n9c18964","Potra2n9c19384","Potra2n9c19859","Potra2n5c10911","Potra2n14c27106")
+#' 
+#' liSelMarkST7<- c("Potra2n2c4994","Potra2n14c27682","Potra2n8c18380","Potra2n7c15772","Potra2n4c9797","Potra2n2c6426","Potra2n5c11306","Potra2n16c30290","Potra2n14c27721","Potra2n1c1438","Potra2n11c23043","Potra2n5c11668","Potra2n5c10940","Potra2n5c10926","Potra2n1c3835","Potra2n6c14358","Potra2n6c14530","Potra2n16c29448","Potra2n9c19538","Potra2n4c9403","Potra2n3c7365","Potra2n9c19373","Potra2n2c5831","Potra2n5c12253","Potra2n16c29767","Potra2n4c10402","Potra2n7c15743","Potra2n9c19117","Potra2n820s36802","Potra2n4c9402")
+#' #'
+#' #' 5.9. Genes for clusters and cell types (Chen et al., 2021)
+#' mark <- c("Potra2n6c14918","Potra2n4c9802","Potra2n15c29012","Potra2n1c986","Potra2n5c12689",
+#'           "Potra2n2c5262","Potra2n18c32485","Potra2n1c2071","Potra2n3c7164","Potra2n5c11923",
+#'           "Potra2n4c8852","Potra2n19c34474","Potra2n1c1024","Potra2n7c16246","Potra2n14c27521",
+#'           "Potra2n369s35437","Potra2n12c24741","Potra2n5c10890","Potra2n1c3322","Potra2n17c31073",
+#'           "Potra2n12c24778","Potra2n1c769","Potra2n1c957","Potra2n369s35445","Potra2n6c13032",
+#'           "Potra2n3c7257","Potra2n4c8671")
+#' 
+#' #' 5.10. For fibers
+#' #' Late fiber gene list sent by Hannele
+#' lateFibHanle <- c ("Potra2n6c14170","Potra2n1c1849","Potra2n6c15100","Potra2n6c15101","Potra2n19c33746","Potra2n5c12551","Potra2n1c94","Potra2n4c9157","Potra2n12c24599","Potra2n4c9039","Potra2n8c17428","Potra2n19c34385","Potra2n15c28085","Potra2n6c14603","Potra2n15c28689","Potra2n12c24486","Potra2n633s36227","Potra2n12c24762","Potra2n16c29514","Potra2n19c33745","Potra2n125s34627","Potra2n13c25019","Potra2n13c25443","Potra2n15c28411","Potra2n16c30073","Potra2n19c33329","Potra2n19c33344","Potra2n19c33747","Potra2n3c6760","Potra2n4c9502")
+#' lowexp <- c("Potra2n6c14170","Potra2n1c1849","Potra2n6c15100","Potra2n6c15101","Potra2n19c33746","Potra2n12c24599","Potra2n4c9039","Potra2n6c14603","Potra2n12c24762","Potra2n19c33745","Potra2n15c28411","Potra2n19c33344")
+#' 
+#' #' 5.11. Tung et al., 2022
+#' lignin <- c("Potra2n3c6783","Potra2n6c14201","Ptra2n8c16946","Potra2n14c26628","Potra2n16c30091","Potra2n5c10696","Potra2n8c16891","Potra2n13c25045","Potra2n17c30922")
+#' figs13 <- c("Potra2n19c33452","Potra2n1c856","Potra2n1c1639","Potra2n1c1897","Potra2n2c5835","Potra2n2c4490","Potra2n3c8296","Potra2n4c9930","Potra2n4c10139","Potra2n8c17951","Potra2n11c22655","Potra2n15c28183","Potra2n15c28184")
+#' figs19 <- c("Potra2n17c31807","Potra2n8c16805","Potra2n5c12126","Potra2n5c11373","Potra2n14c26481", "Potra2n7c16454")
+#' s14fib <- c("Potra2n10c20156","Potra2n10c22093","Potra2n12c23702","Potra2n12c23837","Potra2n12c24890","Potra2n13c25019","Potra2n13c25704","Potra2n13c26198","Potra2n14c27637","Potra2n15c28014","Potra2n15c29105","Potra2n15c29113","Potra2n15clength29164","Potra2n16c29484","Potra2n16c30218","Potra2n16c30267","Potra2n17c31215","Potra2n17c31695","Potra2n18c32051","Potra2n18c32369","Potra2n19c33344","Potra2n1c1134","Potra2n1c1591","Potra2n1c1997","Potra2n1c2382","Potra2n1c3857","Potra2n2c4696","Potra2n2c6000","Potra2n2c6306","Potra2n3c6819","Potra2n3c7291","Potra2n4c8742","Potra2n4c9502","Potra2n4c9523","Potra2n4c9719","Potra2n5c11070","Potra2n5c11913","Potra2n5c12161","Potra2n6c14379","Potra2n6c14530","Potra2n6c14780","Potra2n6c14781","Potra2n7c16243","Potra2n8c17402","Potra2n8c17650","Potra2n8c18023","Potra2n8c18128","Potra2n8c18294","Potra2n9c18710","Potra2n9c19633","Potra2n9c19741","Potra2n9c20007","Potra2n6c15285","Potra2n6c13790")
+#' s14ves <- c("Potra001029g08632","Potra2n10c20716","Potra2n10c20846","Potra2n10c21715","Potra2n11c22924","Potra2n12c23924","Potra2n12c24430","Potra2n12c24758","Potra2n13c25053","Potra2n13c25938","Potra2n13c26020","Potra2n14c26398","Potra2n14c26658","Potra2n14c27455","Potra2n14c27675","Potra2n15c28703","Potra2n16c29368","Potra2n16c29956","Potra2n18c32909","Potra2n1c2383","Potra2n1c3919","Potra2n1c483","Potra2n1c631","Potra2n203s34942","Potra2n2c4081","Potra2n2c5047","Potra2n2c5927","Potra2n2c6217","Potra2n2c6318","Potra2n3c7065","Potra2n3c7465","Potra2n4c8586","Potra2n4c8788","Potra2n4c9127","Potra2n4c9402","Potra2n514s35859","Potra2n5c10700","Potra2n5c11603","Potra2n5c11639","Potra2n5c12176","Potra2n5c12351","Potra2n5c12441","Potra2n6c14479","Potra2n6c14597","Potra2n7c15960","Potra2n8c17079","Potra2n8c17589","Potra2n8c17613","Potra2n8c18257","Potra2n9c19793","Potra2n9c19878")
+#' s14ray <- c("Potra001886g15019","Potra2n10c20181","Potra2n10c20234","Potra2n10c20683","Potra2n10c20932","Potra2n10c21140","Potra2n10c21228","Potra2n10c21351","Potra2n10c21638","Potra2n10c21713","Potra2n10c21725","Potra2n10c21912","Potra2n10c22232","Potra2n11c22873","Potra2n11c23444","Potra2n12c23733","Potra2n12c23990","Potra2n12c24140","Potra2n13c24999","Potra2n13c25225","Potra2n13c25636","Potra2n13c25697","Potra2n13c25934","Potra2n13c26148","Potra2n14c26461","Potra2n14c26462","Potra2n14c26464","Potra2n14c26497","Potra2n14c26529","Potra2n14c27128","Potra2n14c27196","Potra2n14c27357","Potra2n14c27545","Potra2n14c27691","Potra2n14c27805","Potra2n14c27850","Potra2n154s34741","Potra2n15c28231","Potra2n15c29127","Potra2n16c29491","Potra2n16c29513","Potra2n16c30395","Potra2n17c30597","Potra2n19c33348","Potra2n19c33407","Potra2n19c33924","Potra2n19c34230","Potra2n1c1749","Potra2n1c2034","Potra2n1c2037","Potra2n1c2350","Potra2n1c3008","Potra2n1c3440","Potra2n1c3617","Potra2n1c3711","Potra2n1c3908","Potra2n1c531","Potra2n1c677","Potra2n1c693","Potra2n1c714","Potra2n258s35141","Potra2n2c4261","Potra2n2c4724")
+#' s14ray1 <- c("Potra2n2c5150","Potra2n2c5325","Potra2n2c5691","Potra2n2c5770","Potra2n2c5997","Potra2n2c6123","Potra2n2c6195","Potra2n3c6552","Potra2n3c6865","Potra2n3c7178","Potra2n3c7315","Potra2n3c7363","Potra2n3c7903","Potra2n4c8432","Potra2n4c9135","Potra2n4c9752","Potra2n4c9884","Potra2n5c10715","Potra2n5c10780","Potra2n5c11137","Potra2n5c11557","Potra2n5c12296","Potra2n5c12429","Potra2n5c12447","Potra2n5c12522","Potra2n5c12541","Potra2n5c12687","Potra2n5c12804","Potra2n620s36177","Potra2n6c12828","Potra2n6c13140","Potra2n6c13191","Potra2n6c13220","Potra2n6c13318","Potra2n6c13467","Potra2n6c13491","Potra2n6c13586","Potra2n6c13868","Potra2n6c13967","Potra2n6c14775","Potra2n6c14862","Potra2n6c15097","Potra2n6c15141","Potra2n6c15233","Potra2n6c15336","Potra2n747s36678","Potra2n7c15481","Potra2n7c15868","Potra2n7c15955","Potra2n7c16004","Potra2n7c16369","Potra2n7c16410","Potra2n7c16446","Potra2n8c16988","Potra2n8c17145","Potra2n8c17251","Potra2n8c17293","Potra2n8c17331","Potra2n9c18794","Potra2n9c18942","Potra2n9c18949","Potra2n9c19022","Potra2n9c19045","Potra2n9c19321","Potra2n9c19718","Potra2n9c19805")
+#' s18 <- c("Potra2n1c1345","Potra2n2c5467","Potra2n2c4942","Potra2n2c4144","Potra2n2c4078","Potra2n4c8430","Potra2n568s35990","Potra2n5c12126","Potra2n5c11373","Potra2n5c10753","Potra2n6c14930","Potra2n155s34744","Potra2n16c30073","Potra2n6c13614","Potra2n7c16454","Potra2n8c16805","Potra2n8c16999","Potra2n8c18231","Potra2n10c21170","Potra2n14c26481","Potra2n15c28766","Potra2n15c28689","Potra2n17c31807","Potra2n18c32244","Potra2n19c33790")
+#' 
+#' # Selected markers (Tung et al., 2022)
+#' LateFib_Ves <- c("Potra2n5c10753","Potra2n8c16805","Potra2n17c31807","Potra2n19c33790")
+#' InterFib <- c("Potra2n5c12126","Potra2n6c14930","Potra2n14c26481")
+#' RayOrgan <- c("Potra2n5c11373","Potra2n8c16999")
+#' EarlyFib <- c("Potra2n568s35990","Potra2n7c16454")
+#' RayPrecu <- c("Potra2n8c18231","Potra2n18c32244")
+#' FibOrgan <- c("Potra2n1c1345","Potra2n4c8430","Potra2n6c13614","Potra2n15c28766")
+#' Fib <- c("Potra2n2c4078","Potra2n16c30073","Potra2n10c21170","Potra2n15c28689")
+#' RayParen <- c("Potra2n2c5467","Potra2n2c4942","Potra2n2c4144","Potra2n155s34744")
+#' 
+#' #' 5.12. Lignin genes from Mikko's paper
+#' ligMiko <- c("Potra2n19c33285","Potra2n1c351","Potra2n10c20411","Potra2n9c19275","Potra2n9c19246","Potra2n8c17885","Potra2n8c16946","Potra2n7c16495","Potra2n6c15127","Potra2n6c14201","Potra2n5c11765","Potra2n3c7945","Potra2n3c6847","Potra2n3c6817","Potra2n3c6783","Potra2n1c307","Potra2n1c2649","Potra2n1c1541","Potra2n16c30091","Potra2n16c29966","Potra2n13c24959","Potra2n12c23766")
+#' 
+#' # 5.13. O-Carillo et al cell death genes
+#' death <- c("Potra2n4c10301","Potra2n16c29448","Potra2n10c21346","Potra2n1c3148","Potra2n4c8470")
+#' 
+#' #5.14. ERF 81-88
+#' erf <- c("Potra2n15c29002","Potra2n1c788","Potra2n2c4898","Potra2n3c7265",
+#'          "Potra2n13c24952","Potra2n14c27085","Potra2n19c33278","Potra2n12c23983")
+#' 
+#' #5.15.
+#' GT43Mello<- c("Potra2n2c5445","Potra2n5c11571","Potra2n6c14160","Potra2n6c13189",
+#'               "Potra2n7c16228","Potra2n16c30051","Potra2n18c32894")
+#' 
+#' # 5.16
+#' # GUS lines
+#' gus <- c("Potra2n3c7095","Potra2n4c9818","Potra2n5c11792","Potra2n9c19178",
+#'          "Potra2n18c32992","Potra2n19c33746","Potra2n10c20181","Potra2n13c26298",
+#'          "Potra2n13c25538","Potra2n15c28411","Potra2n2c5389","Potra2n4c9202",
+#'          "Potra2n9c18829","Potra2n10c22224","Potra2n17c31277","Potra2n10c20842",
+#'          "Potra2n16c30091","Potra2n8c17315","Potra2n2c5294")
+#' # issa Validation
+#' issa <- c("Potra2n4c8952","Potra2n5c10536","Potra2n2c6410","Potra2n14c27598", "Potra2n4c9696", "Potra2n2c5606", "Potra2n7c16495", "Potra2n5c11765", "Potra2n7c16234", "Potra2n5c11573", "Potra2n3c7305", "Potra2n2c6235")
+#' 
+#' # 5.17 Larisch et al., 2012
+#' larish <- c("Potra2n13c26124","Potra2n15c28479","Potra2n13c26252","Potra2n3c7481","Potra2n10c21640","Potra2n5c11320","Potra2n10c20915","Potra2n8c17983","Potra2n2c5606","Potra2n4c9696","Potra2n9c19920","Potra2n18c32485","Potra2n8c18284","Potra2n10c22245","Potra2n17c31716","Potra2n19c33927","Potra2n16c29957","Potra2n2c4577","Potra2n10c21132","Potra2n1c1290","Potra2n17c30652","Potra2n18c32561","Potra2n4c9927","Potra2n15c28361","Potra2n10c20361","Potra2n5c12183","Potra2n8c18507","Potra2n18c32183","Potra2n13c26115","Potra2n8c18472","Potra2n8c17720","Potra2n15c28125","Potra2n7c15917","Potra2n5c12157","Potra2n8c17568","Potra2n7c15596","Potra2n10c21949","Potra2n14c27777","Potra2n14c27633")
+#' 
+#' # 5.19. Expansion related: feronia, ralf, lrx, md 
+#' fer <- c("Potra2n16c30521", "Potra2n16c30523", "Potra2n6c14356")
+#' ralf <- c("Potra2n13c26153","Potra2n14c27428","Potra2n17c31433","Potra2n1c2781",
+#'           "Potra2n267s35162","Potra2n4c8790","Potra2n4c8791","Potra2n5c12610")
+#' lrx8 <- c("Potra2n1c2637", "Potra2n6c13964", "Potra2n6c14636", "Potra2n9c19254",
+#'           "Potra2n14c26497")
+#' md <- c("Potra2n14c27025","Potra2n6c14356","Potra2n8c17700","Potra2n16c30033",
+#'         "Potra2n10c21287")
