@@ -29,7 +29,7 @@ suppressPackageStartupMessages({
 #'
 #' Run doublet finder on the filtered and merged data
 #'
-load("data/SeuratOut/filt0.9_seurat.RData")
+load("data/SeuratOut/output/filtered_seurat.rds")
 pop.split <- SplitObject(filtered_seurat, split.by = "sample") 
 #'
 #' Chen et al, 2021 used DoubletFinder tool with following criteria: 
@@ -68,7 +68,7 @@ for (i in 1:length(pop.split)) {
   pop.sample <- FindClusters(object = pop.sample, resolution = 0.1)
   
   # pK identification (no ground-truth)
-  sweep.list <- paramSweep_v3(pop.sample, PCs = 1:min.pc, num.cores = detectCores() - 1)
+  sweep.list <- paramSweep(pop.sample, PCs = 1:min.pc, num.cores = detectCores() - 1)
   sweep.stats <- summarizeSweep(sweep.list)
   bcmvn <- find.pK(sweep.stats)
   
@@ -80,12 +80,12 @@ for (i in 1:length(pop.split)) {
   nExp <- round(optimal.pk * nrow(pop.sample@meta.data))
   
   # run DoubletFinder
-  pop.sample <- doubletFinder_v3(seu = pop.sample, 
+  pop.sample <- doubletFinder(seu = pop.sample, 
                                    PCs = 1:min.pc, 
                                    pK = optimal.pk,
                                    nExp = nExp)
   metadata <- pop.sample@meta.data
-  colnames(metadata)[13] <- "doublet_finder"
+  colnames(metadata)[12] <- "doublet_finder"
   pop.sample@meta.data <- metadata 
   
   # subset
@@ -96,7 +96,7 @@ for (i in 1:length(pop.split)) {
 #'
 pop.singlets <- merge(x = pop.split[[1]], y = pop.split[[2]],
                         project = "singletSNR")
-
+saveRDS(pop.singlets, "data/SeuratOut/output/pop.singlets.rds")
 #'
 #'
 metadata_singlet <- pop.singlets@meta.data
@@ -109,5 +109,6 @@ VlnPlot(pop.singlets, features = c("nGene", "nUMI"), ncol = 2)
 seurat_phase <- NormalizeData(pop.singlets, 
                               normalization.method = "LogNormalize", 
                               scale.factor = 10000)
+saveRDS(seurat_phase, "data/SeuratOut/output/seurat_phase.rds")
 #'
 #' go to seuratSNRIII.R and continue from step 2.4

@@ -60,13 +60,17 @@ suppressPackageStartupMessages({
   library(scCustomize)
   library(qs)
 })
+
+plan("sequential")
+options(future.globals.maxSize = 20 * 1024^3)
+
 #'
 #'
 #' 1. Load cellranger output (.h5 matrix) for control (kcl) and treated (kno3)
-ctrl1.data <- Read10X_h5("/mnt/picea/home/schoudhary/shruti/SNR-u2023011/analysis/snrIII/clRngrCntNucl/kcl2/outs/filtered_feature_bc_matrix.h5")
+ctrl1.data <- Read10X_h5("/mnt/picea/home/schoudhary/shruti/SNR-u2023011/analysis/snrIII/clRngrCntNuclMtCp/kcl2/outs/filtered_feature_bc_matrix.h5")
 #' 20539 x 37184
 #'
-kno1.data <- Read10X_h5("/mnt/picea/home/schoudhary/shruti/SNR-u2023011/analysis/snrIII/clRngrCntNucl/kno2/outs/filtered_feature_bc_matrix.h5")
+kno1.data <- Read10X_h5("/mnt/picea/home/schoudhary/shruti/SNR-u2023011/analysis/snrIII/clRngrCntNuclMtCp/kno2/outs/filtered_feature_bc_matrix.h5")
 #'14217 x 37184 
 #'
 #' If you want to process the data from the previous runs as well (SNRII) and general LT
@@ -125,15 +129,17 @@ metadata <- metadata %>% dplyr::rename(seq_folder = orig.ident,
 #' Get sample names for each cell based on cell prefix:
 metadata$sample <- NA
 metadata$sample[which(str_detect(metadata$cells, "^ctrl_"))] <- "ctrl"
-metadata$sample[which(str_detect(metadata$cells, "^kno1_"))] <- "kno"
+metadata$sample[which(str_detect(metadata$cells, "^kno_"))] <- "kno"
 #'
 #' Add metadata back to Seurat object
 merged_seurat@meta.data <- metadata
+saveRDS(merged_seurat, "data/SeuratOut/output/merged_seurat.rds")
 #'
 #' Assessing quality metrics
 #' 2.2.1. Cell counts:
 #' Visualize number of cell counts per sample and per cluster etc.: not all plots are useful
 #' Plot cell =barcode = orig.ident; nCount_RNA = nUMI; nFeature_RNA = nGene
+metadata <- merged_seurat@meta.data
 metadata %>% ggplot(aes(x=sample, fill=sample)) + geom_bar() +
   theme_classic() +
   theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) +
@@ -147,7 +153,7 @@ metadata %>% ggplot(aes(color=sample, x=nUMI, fill= sample)) +
 #'
 #' 2.2.3. Plot Genes per cell
 metadata %>% ggplot(aes(color=sample, x=nGene, fill= sample)) + 
-  geom_density(alpha = 0.2) + theme_classic() + scale_x_log10() + 
+  geom_density(alpha = 0.2) + theme_classic() + scale_x_log10
   geom_vline(xintercept = 500)+ ggtitle("Genes Per Cell")
 #'
 #' 2.2.4. Plot genes per cell via boxplot
@@ -170,26 +176,14 @@ metadata %>% ggplot(aes(x=log10GenesPerUMI, color = sample, fill=sample)) +
   geom_density(alpha = 0.2) + theme_classic() + geom_vline(xintercept = 0.85) +
   ggtitle("Genes Per UMI")
 #'
-metadata %>% ggplot(aes(color=sample, x=mitoRatio, fill=sample)) + 
+metadata %>% ggplot(aes(color=sample, x=percent.cp, fill=sample)) + 
   geom_density(alpha = 0.2) + scale_x_log10() + theme_classic() +
   geom_vline(xintercept = 0.2)
 #'
 #' 2.2.7. QC metrics plot more examples
-VlnPlot(merged_seurat, features = c("nGene", "nUMI", "mtcpRatio"), ncol = 3)+
+VlnPlot(merged_seurat, features = c("nGene", "nUMI", "percent.mt", "percent.cp"), ncol = 2)+
   NoLegend()
 FeatureScatter(merged_seurat, feature1 = "nUMI", feature2 = "nGene")
-#'
-# 2.2.8. mean number of counts for each cell or gene with or without sample specificity
-counts_per_cell <- Matrix::colSums(merged_seurat, slot = 'counts')
-counts_per_gene <- Matrix::rowSums(merged_seurat, slot = 'counts', sample="kcl")
-genes_per_cell <- Matrix::colSums(counts>0)
-cells_per_gene <- Matrix::rowSums(counts>0)
-hist(log10(counts_per_cell+1), main='counts per cell',col='wheat')
-hist(log10(genes_per_cell+1), main='genes per cell', col='wheat')
-plot(counts_per_cell, genes_per_cell, log='xy', col='wheat')
-title('Counts vs Genes per Cell')
-plot(sort(genes_per_cell), xlab='cell', log='y', main='genes per cell (ordered)')
-#'
 #'
 #' 2.3. Filtration
 #' 2.3.1. Cell-level filtering
@@ -197,11 +191,19 @@ plot(sort(genes_per_cell), xlab='cell', log='y', main='genes per cell (ordered)'
 filtered_seurat <- subset(x = merged_seurat, subset= (nUMI >= 500) &
                             (nGene >= 200) & (log10GenesPerUMI > 0.9) &
                             (percent.mt < 5) & (percent.cp < 5))
-#'
+
+saveRDS(filtered_seurat, "data/SeuratOut/output/filtered_seurat.rds")
+objs <- filtered_seurat
+objs <- NormalizeData(objs)
+objs <- FindVariableFeatures(objs)
+objs <- ScaleData(objs)
+objs <- SCTransform(objs, verbose = TRUE, method = "glmGamPoi")
+saveRDS(objs, "data/SeuratOut/output/objs.rds")
+
 #'
 #' 2.3.2. Gene-level filtering 
 #' Removed genes with zero expression in all cells 
-filt_counts <- GetAssayData(object = filt0.9_seurat, slot = "counts")
+filt_counts <- GetAssayData(object = filtered_seurat, layer = "counts")
 nonzero <- filt_counts > 0
 #' keep only genes which are expressed in 3 or more cells.
 keep_genes <- Matrix::rowSums(nonzero) >= 3
@@ -223,31 +225,9 @@ metadata_clean %>%  ggplot(aes(x=sample, fill=sample)) + geom_bar() +
   theme(plot.title = element_text(hjust=0.5, face="bold")) +
   ggtitle("Number of Cells after Filtration")
 #'
-metadata_clean %>% ggplot(aes(color=sample, x=nUMI, fill= sample)) + 
-  geom_density(alpha = 0.2) + scale_x_log10() + theme_classic() +
-  ylab("Cell density") + geom_vline(xintercept = 1000) +
-  ggtitle("UMI per Cell after Filtration")
-#'
 metadata_clean %>% ggplot(aes(color=sample, x=nGene, fill= sample)) + 
   geom_density(alpha = 0.2) + theme_classic() + scale_x_log10() + 
   geom_vline(xintercept = 500)+ ggtitle("Genes per Cell after Filtration")
-#'
-#' via boxplot
-metadata_clean %>% ggplot(aes(x=sample, y=log10(nGene), fill=sample)) + 
-  geom_boxplot() + theme_classic() +
-  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) +
-  theme(plot.title = element_text(hjust=0.5, face="bold")) +
-  ggtitle("No. of Cells vs No. of Genes after Filtration")
-#'
-#' Overall complexity of the gene expression from genes detected per UMI
-metadata_clean %>% ggplot(aes(x=log10GenesPerUMI, color = sample, fill=sample)) +
-  geom_density(alpha = 0.2) + theme_classic() + geom_vline(xintercept = 0.85) +
-  ggtitle("Genes Per UMI after Filtration")
-#'
-dim(metadata_clean)
-#'
-UMIGene <- filtered_seurat[[c("nUMI", "nGene")]]
-VlnPlot(filtered_seurat, features = c("nGene", "nUMI"), ncol = 2)
 #'
 #' mean number of counts for each cell
 counts_per_cell <- Matrix::colSums(filtered_seurat, slot = 'counts')
@@ -257,10 +237,9 @@ counts_per_gene <- Matrix::rowSums(filtered_seurat, slot = 'counts')
 mean_counts_per_cell <- Matrix::colMeans(filtered_seurat, slot = 'counts')
 #'
 #'
-save(filtered_seurat, file="data/SeuratOut/filt0.9_seurat.RData")
+save(filtered_seurat, file="data/SeuratOut/output/filtered_seurat.rds")
 #' Remove objects not needed
-#' 
-#' 
+#'
 #' Go to /mnt/picea/home/schoudhary/shruti/SNRIII/pipeline/doubletFinder.R 
 #' to remove doublets for merged and filtered samples.
 #' 
@@ -276,6 +255,7 @@ save(filtered_seurat, file="data/SeuratOut/filt0.9_seurat.RData")
 #' Cell cycle genes (sphase and g2m pahse) list for poplar in script CellTypeMarker.R
 #' 
 #' 
+DefaultAssay(seurat_phase) <- "RNA"
 seurat_phase <- CellCycleScoring(seurat_phase, s.features = sphase, 
                                  g2m.features = c(g2phase,mphase), 
                                  set.ident = TRUE)
@@ -301,7 +281,6 @@ seurat_phase <- ScaleData(seurat_phase, features = rownames(seurat_phase))
 #' 
 seurat_phase <- RunPCA(seurat_phase)
 DimPlot(seurat_phase, reduction = "pca", split.by = "Phase")
-#' 
 #' 
 #' 3. SCTransform
 #' 
@@ -391,11 +370,12 @@ saveRDS(seurat_integrated, file ="data/SeuratOut/integ.rds")
 seurat_integrated <- BuildClusterTree(seurat_integrated, dims = 1:50,
                                       reorder = F, reorder.numeric = F)
 PlotClusterTree(seurat_integrated)
+saveRDS(seurat_integrated, "data/SeuratOut/integ.rds")
 #'
 #'
 #' Use the 0.6 resolution downstream
 #' 
-Idents(object = seurat_integrated) <- "integrated_snn_res.0.6"
+Idents(seurat_integrated) <- "integrated_snn_res.0.6"
 #'
 #'
 DimPlot(seurat_integrated, reduction = "umap", label = TRUE, label.size = 2)
@@ -411,14 +391,88 @@ DimPlot(seurat_integrated, reduction = "umap", split.by = "Phase", label = TRUE,
 #'
 #' Extract identity and sample info to determine no. of cells per cluster per sample
 integ <- readRDS("data/SeuratOut/integ.rds")
-n_cells <- FetchData(integ, vars = c("ident")) %>% dplyr::count(ident) %>%
-  tidyr::spread(ident, n)
-View(n_cells)
-#'
-#'
+# n_cells <- FetchData(integ, vars = c("ident")) %>% dplyr::count(ident) %>%
+#   tidyr::spread(ident, n)
+
+DefaultAssay(integ)  <- "RNA"
+Idents(integ) <- "integrated_snn_res.0.6"
+
+cell_counts <- integ@meta.data %>%
+  count(sample, integrated_snn_res.0.6, name = "n_cells")
+
+ggplot(cell_counts, aes(x = as.factor(integrated_snn_res.0.6),
+           y = n_cells, fill = sample)) +
+  geom_col(position = position_dodge(0.8)) + theme_classic() +
+  labs(x = "Cluster", y = "Number of cells") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+VlnPlot(integ, features = "nUMI", group.by = "integrated_snn_res.0.6",
+  split.by = "sample", pt.size = 0, raster = T) + labs(y = "UMI counts")
+
+VlnPlot(integ, features = "nGene", group.by = "integrated_snn_res.0.6",
+        split.by = "sample", pt.size = 0, raster = T) + labs(y = "Gene counts")
+#' 
+# For manuscript supplementary figure, draw for raw (use merged before filter) and
+# pop.singlets or integ (after filter and doublet removal)
+# Features detected per cell
+# UMI counts per cell:
+# Percentage of mitochondrial reads per cell
+# relationship between UMI count and detected genes
+DefaultAssay(merged_seurat) <- "RNA"
+DefaultAssay(pop.singlets)  <- "RNA"
+DefaultAssay(integ)  <- "RNA"
+
+metadata_combined <- bind_rows(merged_seurat@meta.data %>%
+                                 mutate(object = "Before pre-processing"),
+                               pop.singlets@meta.data %>% 
+                                 mutate(object = "After pre-processing")) %>%
+  select(sample, nGene, nUMI, percent.mt, object) %>%
+  mutate(object = factor(object, levels = c("Before pre-processing",
+                                            "After pre-processing")))
+
+cell_counts <- metadata_combined %>% count(object, sample, name = "n_cells")
+ggplot(cell_counts, aes(sample, n_cells, fill = object)) +
+  geom_col(position = position_dodge(0.8)) +
+  theme_classic() + theme(axis.text.x = element_text(angle = 45, hjust = 1),
+                          axis.title.x = element_blank()) + labs(y = "Number of cells") +
+  NoLegend()
+
+plot_violin <- function(metric, ylab_text) {
+  ggplot(metadata_combined, aes(sample, .data[[metric]], fill = object)) +
+    geom_violin(position = position_dodge(0.9), trim = TRUE) +
+    theme_classic() + theme(axis.text.x = element_text(angle = 45, hjust = 1),
+                            axis.title.x = element_blank()) +
+    labs(y = ylab_text) + NoLegend()}
+
+plot_violin("nGene", "Number of detected genes")
+plot_violin("nUMI", "Number of detected UMIs")
+plot_violin("percent.mt", "Mitochondrial gene percentage")
+
+theme_publication_qc <- function(base_size = 14){
+  theme_classic(base_size = base_size) +
+    theme(
+      plot.title = element_text(face = "bold", size = 16, hjust = 0.5),
+      axis.title = element_text(face = "bold", size = 14),
+      axis.text = element_text(size = 12),
+      legend.title = element_text(face = "bold"),
+      legend.text = element_text(size = 11),
+      strip.text = element_text(face = "bold", size = 13),
+      panel.grid.major = element_blank(),
+      panel.grid.minor = element_blank())}
+
+FeatureScatter(merged_seurat, feature1 = "nUMI", feature2 = "nGene",
+               split.by = "sample", pt.size = 0.5, raster = T) + 
+  labs(x = "Total UMI counts", y = "Number of detected genes") +
+  theme_publication_qc() + NoLegend()+
+  theme(panel.border = element_rect(fill = NA, linewidth = 1))
+
+FeatureScatter(integ, feature1 = "nUMI", feature2 = "nGene",
+               split.by = "sample", pt.size = 0.5, raster = T) + 
+  labs(x = "Total UMI counts", y = "Number of detected genes") +
+  theme_publication_qc() + NoLegend()+
+  theme(panel.border = element_rect(fill = NA, linewidth = 1))
+# 
 #' Remove useless objects
-#' 
-#' 
 #' 5. Markers
 #' 5.1. Finding DE markers for each cluster
 #' 

@@ -1,5 +1,9 @@
-# Project template
-This is the project template from the Umeå Plant Science Centre Bioinformatics Facility. 
+# Single cell RNA-seq-SNRIII
 
-To use it for your project, you can check this [GitHub gist](https://gist.github.com/nicolasDelhomme/46a1053d277510b95692318bd1732b6d)
+## Abstract
+Hybrid aspen was grown under controlled nitrogen fertilization. These trees were treated with nitrate and potassium chloride (as control). Stem samples were peeled and protoplasts were isolated for single cell RNA sequencing 2h after the treatment to trace gene expression changes in wood or xylem cells.
 
+## Setup
+```bash
+ln -s /mnt/ada/projects/aspseq/htuominen/SingleCellSeqSNRIII/raw/ data/raw
+```
