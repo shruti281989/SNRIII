@@ -30,18 +30,16 @@ suppressPackageStartupMessages({
 suppressMessages(source("UPSCb-common/src/R/topGoUtilities.R"))
 goannot <- prepAnnot(mapping = "/mnt/reference/Populus-tremula/v2.2/gopher/gene_to_go.tsv")
 background <- readRDS("/mnt/ada/projects/aspseq/htuominen/SNR-results/ctrl_bg.rds")
-#'
-#'
-dir.create("GO_plots_Wilcoxfdr0.01", showWarnings = FALSE)
-dir.create("GO_tables_Wilcoxfdr0.01", showWarnings = FALSE)
-#'
-#'
+
+dir.create("~/shruti/SNRIII/data/SeuratOut/output/afterDbltRemoval/GO_tables_Wilcoxfdr0.01/", showWarnings = FALSE)
+dir.create("~/shruti/SNRIII/data/SeuratOut/output/afterDbltRemoval/GO_plots_Wilcoxfdr0.01/", showWarnings = FALSE)
+
 deg_data <- read.table("data/SeuratOut/degWilcoxpct0.1fdr0.01.txt", header = T)
-deg_data <- deg_data %>% mutate(Direction = ifelse(avg_log2FC > 0, "up", "down"))
-#'
-#'
+deg_data <- deg_data %>% mutate(Direction = ifelse(lfc > 0, "up", "down"))
+
 enrichment_results <- list()
 summary_table <- data.frame()
+
 #'
 for (cl in unique(deg_data$cluster)) {
   for (dir in c("up", "down")) {
@@ -67,9 +65,63 @@ for (cl in unique(deg_data$cluster)) {
   }
 }
 #'
-#'
-write.csv(summary_table, "GO_tables_Wilcoxfdr0.01/GO_enrichment_summary.csv", 
+write.csv(summary_table, "~/shruti/SNRIII/data/SeuratOut/output/afterDbltRemoval/GO_tables_Wilcoxfdr0.01/GO_enrichment_summary.csv", 
           row.names = F)
+#'
+#' if you want gene list
+enrichment_results <- list()
+summary_table <- data.frame()
+
+for (cl in unique(deg_data$cluster)) {
+  
+  dir.create(file.path("~/shruti/SNRIII/data/SeuratOut/output/afterDbltRemoval/GO_Wilcoxfdr0.01", paste0("Cluster_", cl)),
+             showWarnings = FALSE)
+  
+  for (dir in c("up", "down")) {
+    
+    genes <- deg_data %>% filter(cluster == cl, Direction == dir) %>% pull(gene)
+    
+    if (length(genes) < 10) next
+    
+    gores <- topGO(set = genes, background = background, annotation = goannot,
+                   ontology = c("BP", "MF", "CC"), algorithm = "parentchild",
+                   statistic = "fisher", p.adjust = "fdr", alpha = 0.05)
+    
+    enrichment_results[[as.character(cl)]][[dir]] <- gores
+    
+    for (ont in names(gores)) {
+      
+      tab <- gores[[ont]]
+      
+      if (!is.null(tab) && nrow(tab) > 0) {
+        
+        ## ---- Extract genes per GO term ----
+        term_genes <- lapply(tab$GO.ID, function(go) {
+          intersect(goannot[[go]], genes)
+        })
+        
+        tab$Genes <- sapply(term_genes, paste, collapse = ";")
+        
+        tab$Cluster <- cl
+        tab$Direction <- dir
+        tab$Ontology <- ont
+        
+        summary_table <- bind_rows(summary_table, tab)
+        
+        ## ---- Save cluster-specific enrichment table ----
+        write.csv(
+          tab,
+          file = file.path("~/shruti/SNRIII/data/SeuratOut/output/afterDbltRemoval/GO_Wilcoxfdr0.01",
+                           paste0("Cluster_", cl),
+                           paste0("Cluster_", cl, "_", dir, "_", ont, "_GO.csv")
+          ),
+          row.names = FALSE
+        )
+      }
+    }
+  }
+}
+
 #'
 #'
 extractEnrichmentResults <- function(enrichment,
@@ -116,7 +168,7 @@ extractEnrichmentResults <- function(enrichment,
 #'
 extractEnrichmentResults(enrichment_results)
 #'
-df <- read.csv("GO_tables_Wilcoxfdr0.01/GO_enrichment_summary.csv")
+df <- read.csv("~/shruti/SNRIII/data/SeuratOut/output/afterDbltRemoval/GO_tables_Wilcoxfdr0.01/GO_enrichment_summary.csv")
 df <- df %>% filter(FDR < 0.05)
 ggplot(df, aes(x = Cluster, y = Term, size = Significant, color = FDR, 
                shape = Direction)) +
@@ -126,7 +178,7 @@ ggplot(df, aes(x = Cluster, y = Term, size = Significant, color = FDR,
   labs(size = "Gene Count", color = "FDR", shape = "Regulation")
 #'
 #'
-#' GO plots in DEGs from scRNASeq data in figure 6A in manuscript
+#' GO plots in DEGs from scRNASeq data in figure 5A in manuscript
 #' 
 df <- read.table("GODeg.txt", sep = "\t", header = T)
 df$Cluster.number <- factor(df$Cluster.number, levels = unique(df$Cluster.number))
