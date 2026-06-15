@@ -153,7 +153,7 @@ metadata %>% ggplot(aes(color=sample, x=nUMI, fill= sample)) +
 #'
 #' 2.2.3. Plot Genes per cell
 metadata %>% ggplot(aes(color=sample, x=nGene, fill= sample)) + 
-  geom_density(alpha = 0.2) + theme_classic() + scale_x_log10
+  geom_density(alpha = 0.2) + theme_classic()+
   geom_vline(xintercept = 500)+ ggtitle("Genes Per Cell")
 #'
 #' 2.2.4. Plot genes per cell via boxplot
@@ -559,7 +559,7 @@ integ$RNA_snn_res.0.1 <- NULL
 saveRDS(integ, file="data/SeuratOut/integDiffXyT89SNRIII.rds")
 #'
 #'
-#'Stats
+#' median Stats
 counts <- GetAssayData(integ, assay = "RNA", layer = "counts")
 sample_stats <- do.call(
   rbind, lapply(unique(integ$sample), function(samp) {
@@ -572,7 +572,14 @@ sample_stats <- do.call(
       TotalGenesDetected = sum(rowSums(sample_counts) > 0),
       row.names = NULL)}))
 
-print(sample_stats)
+# Bar plot UMI
+df <- integ@meta.data %>% group_by(sample) %>%
+  summarise(total_UMI = sum(nUMI, na.rm = TRUE))
+ggplot(df, aes(x = sample, y = total_UMI)) +
+  geom_col() + scale_y_continuous(labels = label_comma()) +
+  labs(x = "Sample", y = "Total UMI counts") +
+  theme_classic() + theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
 #' Tutorials from the following sources were followed:
 #' https://hbctraining.github.io/scRNA-seq/lessons/04_SC_quality_control.html
 #' https://www.bioinformatics.babraham.ac.uk/training/10XRNASeq/seurat_workflow.html
