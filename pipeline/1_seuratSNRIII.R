@@ -559,7 +559,20 @@ integ$RNA_snn_res.0.1 <- NULL
 saveRDS(integ, file="data/SeuratOut/integDiffXyT89SNRIII.rds")
 #'
 #'
-#'
+#'Stats
+counts <- GetAssayData(integ, assay = "RNA", layer = "counts")
+sample_stats <- do.call(
+  rbind, lapply(unique(integ$sample), function(samp) {
+    cells <- rownames(integ@meta.data)[integ$sample == samp]
+    sample_counts <- counts[, cells, drop = FALSE]
+    data.frame(Sample = samp,
+      NumberOfCells = ncol(sample_counts),
+      MedianUMIperCell = median(colSums(sample_counts)),
+      MedianGenesperCell = median(colSums(sample_counts > 0)),
+      TotalGenesDetected = sum(rowSums(sample_counts) > 0),
+      row.names = NULL)}))
+
+print(sample_stats)
 #' Tutorials from the following sources were followed:
 #' https://hbctraining.github.io/scRNA-seq/lessons/04_SC_quality_control.html
 #' https://www.bioinformatics.babraham.ac.uk/training/10XRNASeq/seurat_workflow.html
