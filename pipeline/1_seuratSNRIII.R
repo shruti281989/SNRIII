@@ -471,6 +471,28 @@ FeatureScatter(integ, feature1 = "nUMI", feature2 = "nGene",
   labs(x = "Total UMI counts", y = "Number of detected genes") +
   theme_publication_qc() + NoLegend()+
   theme(panel.border = element_rect(fill = NA, linewidth = 1))
+
+#'
+#' violin for UMI with correct scale
+VlnPlot(integ, features = "nUMI", group.by = "sample", pt.size = 0) + 
+  scale_y_continuous(transform ="log10", breaks = seq(0, 19000, by = 1000))
+VlnPlot(merged_seurat, features = "nUMI", group.by = "sample", pt.size = 0) + 
+  scale_y_continuous(transform = "log10",
+                     breaks = c(1000, 3000, 5000, 7000, 9000, 15000,
+                                25000, 50000, 75000, 100000, 125000))
+#'
+#' check median UMI and gene 
+counts <- GetAssayData(integ, assay = "RNA", layer = "counts")
+sample_stats <- do.call(
+  rbind, lapply(unique(integ$sample), function(samp) {
+    cells <- rownames(integ@meta.data)[integ$sample == samp]
+    sample_counts <- counts[, cells, drop = FALSE]
+    data.frame(Sample = samp,
+               NumberOfCells = ncol(sample_counts),
+               MedianUMIperCell = median(colSums(sample_counts)),
+               MedianGenesperCell = median(colSums(sample_counts > 0)),
+               TotalGenesDetected = sum(rowSums(sample_counts) > 0),
+               row.names = NULL)}))
 # 
 #' Remove useless objects
 #' 5. Markers
@@ -559,27 +581,6 @@ integ$RNA_snn_res.0.1 <- NULL
 saveRDS(integ, file="data/SeuratOut/integDiffXyT89SNRIII.rds")
 #'
 #'
-#' median Stats
-counts <- GetAssayData(integ, assay = "RNA", layer = "counts")
-sample_stats <- do.call(
-  rbind, lapply(unique(integ$sample), function(samp) {
-    cells <- rownames(integ@meta.data)[integ$sample == samp]
-    sample_counts <- counts[, cells, drop = FALSE]
-    data.frame(Sample = samp,
-      NumberOfCells = ncol(sample_counts),
-      MedianUMIperCell = median(colSums(sample_counts)),
-      MedianGenesperCell = median(colSums(sample_counts > 0)),
-      TotalGenesDetected = sum(rowSums(sample_counts) > 0),
-      row.names = NULL)}))
-
-# Bar plot UMI
-df <- integ@meta.data %>% group_by(sample) %>%
-  summarise(total_UMI = sum(nUMI, na.rm = TRUE))
-ggplot(df, aes(x = sample, y = total_UMI)) +
-  geom_col() + scale_y_continuous(labels = label_comma()) +
-  labs(x = "Sample", y = "Total UMI counts") +
-  theme_classic() + theme(axis.text.x = element_text(angle = 45, hjust = 1))
-
 #' Tutorials from the following sources were followed:
 #' https://hbctraining.github.io/scRNA-seq/lessons/04_SC_quality_control.html
 #' https://www.bioinformatics.babraham.ac.uk/training/10XRNASeq/seurat_workflow.html
